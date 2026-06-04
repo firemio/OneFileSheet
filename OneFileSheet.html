@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>One File Sheet</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  button { margin: 4px; padding: 8px 12px; }
+  table { border-collapse: collapse; margin-top: 12px; }
+  td, th {
+    border: 1px solid #ccc;
+    width: 120px;
+    height: 28px;
+    padding: 4px;
+  }
+  td { cursor: text; }
+</style>
+</head>
+<body>
+
+<h2>One File Sheet</h2>
+
+<button onclick="openSelfFile()">このHTMLを開く</button>
+<button onclick="addRow()">行追加</button>
+<button onclick="addCol()">列追加</button>
+<button onclick="saveToSameFile()">上書き保存</button>
+
+<table id="sheet"></table>
+
+<script id="sheet-data" type="application/json">
+[
+  [
+    "Name",
+    "Amount",
+    "Memo"
+  ],
+  [
+    "Alice",
+    "34",
+    "test"
+  ],
+  [
+    "Bob",
+    "200",
+    ""
+  ]
+]
+</script>
+
+<script>
+let fileHandle = null;
+
+let data = JSON.parse(
+  document.getElementById("sheet-data").textContent.trim()
+);
+
+function render() {
+  const table = document.getElementById("sheet");
+  table.innerHTML = "";
+
+  data.forEach((row, r) => {
+    const tr = document.createElement("tr");
+
+    row.forEach((cell, c) => {
+      const el = document.createElement(r === 0 ? "th" : "td");
+      el.contentEditable = true;
+      el.textContent = cell;
+
+      el.oninput = () => {
+        data[r][c] = el.textContent;
+      };
+
+      tr.appendChild(el);
+    });
+
+    table.appendChild(tr);
+  });
+}
+
+async function openSelfFile() {
+  if (!window.showOpenFilePicker) {
+    alert("このブラウザはFile System Access APIに対応していません。ChromeかEdgeで開いてください。");
+    return;
+  }
+
+  const [handle] = await window.showOpenFilePicker({
+    types: [{
+      description: "HTML File",
+      accept: { "text/html": [".html"] }
+    }]
+  });
+
+  fileHandle = handle;
+
+  const file = await handle.getFile();
+  const text = await file.text();
+
+  const match = text.match(
+    /<script id="sheet-data" type="application\/json">([\s\S]*?)<\/script>/
+  );
+
+  if (!match) {
+    alert("sheet-data が見つかりません。");
+    return;
+  }
+
+  data = JSON.parse(match[1].trim());
+  render();
+
+  alert("HTMLファイルを読み込みました。");
+}
+
+function addRow() {
+  data.push(Array(data[0].length).fill(""));
+  render();
+}
+
+function addCol() {
+  data.forEach(row => row.push(""));
+  render();
+}
+
+async function saveToSameFile() {
+  if (!fileHandle) {
+    alert("先に「このHTMLを開く」で保存対象のHTMLファイルを選んでください。");
+    return;
+  }
+
+  const file = await fileHandle.getFile();
+  let html = await file.text();
+
+  const newDataBlock =
+`<script id="sheet-data" type="application/json">
+${JSON.stringify(data, null, 2)}
+<\/script>`;
+
+  html = html.replace(
+    /<script id="sheet-data" type="application\/json">[\s\S]*?<\/script>/,
+    newDataBlock
+  );
+
+  const writable = await fileHandle.createWritable();
+  await writable.write(html);
+  await writable.close();
+
+  alert("同じHTMLファイルに上書き保存しました。");
+}
+
+render();
+</script>
+
+</body>
+</html>
