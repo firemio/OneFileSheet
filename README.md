@@ -48,3 +48,9 @@ One File Sheet は、現代の LLM がそのまま扱いやすい HTML に、表
 Firefox / Safari では File System Access API に対応していない場合があるため、Chrome または Edge での利用を推奨します。
 
 ブラウザの仕様上、HTMLファイル自身を自動で勝手に書き換えることはできません。最初に「このHTMLを開く」から保存対象のファイルを選択し、保存許可を与える必要があります。
+
+## OSS / ライセンス
+
+One File Sheet はオープンソースソフトウェアです。
+
+MIT License のもとで公開しています。利用、改変、再配布、商用利用ができます。詳しくは [LICENSE](LICENSE) を参照してください。
