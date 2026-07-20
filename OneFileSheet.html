@@ -21,6 +21,8 @@
     --btn-border: #c8c8cd;
     --menu-shadow: rgba(0, 0, 0, 0.15);
   }
+  /* テーマの実体は app-code の THEME_LIST から JS がCSS変数を導出して適用する。
+     以下はJS実行前の初期描画用フォールバック */
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #1e1e1e;
@@ -45,10 +47,46 @@
     background: var(--bg);
     color: var(--fg);
   }
-  h2 { margin: 0 0 10px; font-size: 20px; }
-  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .toolbar .sep { width: 8px; }
+  .topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .topbar .sep { width: 6px; }
+  #doc-title {
+    margin: 0 8px 0 0;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: text;
+    white-space: pre;
+  }
+  #doc-title:hover { background: var(--hover); }
+  #doc-title:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+  #file-path {
+    margin-left: auto;
+    color: var(--status);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 38%;
+  }
+  #help-pop {
+    position: fixed;
+    z-index: 10;
+    max-width: 440px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--menu-shadow);
+    font-size: 13px;
+  }
+  #help-pop[hidden] { display: none; }
+  #help-pop ul { margin: 6px 0 0; padding-left: 18px; }
+  #help-pop li { margin: 4px 0; }
   button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 6px 12px;
     border: 1px solid var(--btn-border);
     background: var(--btn-bg);
@@ -58,14 +96,56 @@
     font-size: 13px;
   }
   button:hover { border-color: var(--accent); color: var(--accent); }
-  #save-status { margin-left: 6px; color: var(--status); font-size: 13px; }
+  button svg { display: block; }
+  button svg[hidden] { display: none; }
+  .topbar button { padding: 7px 9px; }
+  #theme-pop {
+    position: fixed;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    width: 420px;
+    max-width: calc(100vw - 24px);
+    max-height: 70vh;
+    overflow: auto;
+    padding: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--menu-shadow);
+  }
+  #theme-pop[hidden] { display: none; }
+  #theme-pop .theme-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    background: none;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--fg);
+  }
+  #theme-pop .theme-item:hover { background: var(--hover); }
+  #theme-pop .theme-item.active { border-color: var(--accent); }
+  #theme-pop .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid;
+    flex: none;
+  }
+  #save-status { margin-left: 6px; color: var(--status); font-size: 13px; cursor: pointer; }
+  #save-status:hover { color: var(--accent); text-decoration: underline; }
+  #lang-btn { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; min-width: 34px; }
+  #sheet-tabs .tab[contenteditable] { cursor: text; outline: 2px solid var(--accent); outline-offset: -2px; }
   #save-status.ok { color: var(--ok); }
   #save-status.warn { color: var(--warn); }
-  .hint { margin: 8px 0 0; color: var(--status); font-size: 12px; }
   .sheet-wrap {
-    margin-top: 12px;
     overflow: auto;
-    max-height: 78vh;
+    max-height: 72vh;
     max-width: 100%;
     width: fit-content;
     border: 1px solid var(--border);
@@ -108,6 +188,37 @@
   th.row-head, th.corner { position: sticky; left: 0; }
   th.corner { z-index: 3; cursor: default; }
   th.row-head { z-index: 1; }
+  #sheet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 2px;
+    margin-top: 12px;
+    margin-bottom: -1px;
+    padding: 0 6px;
+    position: relative;
+    z-index: 1;
+  }
+  #sheet-tabs .tab {
+    padding: 5px 16px;
+    background: var(--coord-bg);
+    color: var(--status);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
+  #sheet-tabs .tab.active {
+    background: var(--bg);
+    color: var(--fg);
+    font-weight: 600;
+    box-shadow: 0 1px 0 var(--bg);
+  }
+  #sheet-tabs .add-sheet {
+    padding: 4px 10px;
+    margin-left: 4px;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
   #ctx-menu {
     position: fixed;
     z-index: 10;
@@ -126,6 +237,7 @@
     background: none;
     border-radius: 5px;
     padding: 6px 10px;
+    justify-content: flex-start;
     text-align: left;
     font-size: 13px;
     color: var(--fg);
@@ -135,71 +247,120 @@
 </head>
 <body>
 
-<h2>One File Sheet</h2>
-
-<div class="toolbar">
-  <button onclick="openSelfFile()">保存先を設定</button>
-  <button onclick="saveToSameFile()">上書き保存</button>
-  <button onclick="reloadFromFile()">再読み込み</button>
+<div class="topbar">
+  <h2 id="doc-title" title="クリックでタイトルを編集">One File Sheet</h2>
+  <button id="save-btn" onclick="saveToSameFile()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+  </button>
+  <button id="reload-btn" onclick="reloadFromFile()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><polyline points="21 3 21 8 16 8"/></svg>
+  </button>
   <span class="sep"></span>
-  <button onclick="addRow()">行追加</button>
-  <button onclick="addCol()">列追加</button>
-  <button onclick="exportCsv()">CSV書き出し</button>
+  <button id="undo-btn" onclick="undo()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+  </button>
+  <button id="redo-btn" onclick="redo()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+  </button>
+  <span class="sep"></span>
+  <button id="addrow-btn" onclick="addRow()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h7"/><path d="M17.5 14.5v7"/><path d="M14 18h7"/></svg>
+  </button>
+  <button id="addcol-btn" onclick="addCol()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18"/><path d="M12 3v18"/><path d="M18 3v7"/><path d="M18 14v7"/><path d="M14.5 17.5h7"/></svg>
+  </button>
+  <span class="sep"></span>
   <span id="save-status">保存先未設定</span>
+  <span id="file-path"></span>
+  <button id="export-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </button>
+  <button id="help-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+  </button>
+  <button id="lang-btn"></button>
+  <button id="theme-btn">
+    <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+    <svg id="theme-icon-moon" hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+  </button>
 </div>
+
+<div id="help-pop" hidden></div>
+
+<div id="theme-pop" hidden></div>
+
+<div id="sheet-tabs"></div>
 
 <div class="sheet-wrap">
   <table id="sheet"></table>
 </div>
 
-<p class="hint">行番号・列名クリック: 挿入/削除メニュー ｜ Enter/Tab/矢印: セル移動 ｜ Alt+Enter: セル内改行 ｜ Ctrl+S: 保存 ｜ Ctrl+Z / Ctrl+Y: 元に戻す/やり直し ｜ Excel等からの範囲貼り付け対応</p>
-
 <div id="ctx-menu" hidden></div>
 
 <!--
 AGENT NOTES — contract for AI/coding agents editing this file:
-- The spreadsheet data lives ONLY in the JSON block directly below this
+- The spreadsheet document lives ONLY in the JSON block directly below this
   comment: the script element with id "sheet-data" (type application/json).
   Everything else in this file is application code/UI.
-- Data format: JSON 2D array of strings. data[0] is the header row. All rows
-  have equal length (the app pads ragged rows on load). Cells are plain
-  strings; numbers are coerced to strings.
-- Keep the formatting produced by JSON.stringify(data, null, 2): 2-space
-  indent, one value per line, LF line endings. This keeps saves diff-stable.
+- Document format (v2):
+  { "title": string, "theme": "auto" or a theme id from THEME_LIST in the
+    app code (32 built-in themes),
+    "lang": "auto"|"en"|"ja" (UI language; "auto" follows the browser),
+    "activeSheet": number, "sheets": [ { "name": string, "data": [[...]] } ] }
+  Each sheet's data is a JSON 2D array of strings; data[0] is that sheet's
+  header row. All rows in a sheet have equal length (the app pads ragged rows
+  on load). Cells are plain strings; numbers are coerced to strings.
+  A legacy bare 2D array is still accepted on load and migrates to v2 on the
+  next save.
+- Keep the formatting produced by JSON.stringify(doc, null, 2): 2-space
+  indent, LF line endings. This keeps saves diff-stable.
 - Do NOT rename, duplicate, or reformat the opening tag of the sheet-data
   block. The app locates the block with a regex keyed on id="sheet-data";
   extra attributes are tolerated but the id must stay.
 - If a cell value contains "<", write it as \u003c in the JSON so the block
   cannot terminate early. Cell newlines are stored as \n. The in-app save
   applies this escaping automatically.
-- Co-editing semantics: the browser app keeps data in memory. Saving from the
-  browser re-reads this file from disk and rewrites ONLY the sheet-data block,
-  so code edits elsewhere in the file survive a user save. If you change the
-  JSON while the file is open in a browser, the user should press 再読み込み
-  before saving; the app also warns when the on-disk block changed after load.
+- Co-editing semantics: the browser app keeps the document in memory. Saving
+  from the browser re-reads this file from disk and rewrites ONLY the
+  sheet-data block, so code edits elsewhere in the file survive a user save.
+  If you change the JSON while the file is open in a browser, the user should
+  press 再読み込み before saving; the app also warns when the on-disk block
+  changed after load.
 - App code lives in the script element with id "app-code" at the end of body.
-  Entry points: render(), openSelfFile(), reloadFromFile(), saveToSameFile(),
-  exportCsv(), initialize(). Keep UI strings Japanese, identifiers English.
+  Entry points: render(), reloadFromFile(), saveToSameFile(), exportHtml(),
+  exportCsv(), initialize(). UI strings live in the MESSAGES catalog (en/ja);
+  keep identifiers English.
 -->
 
 <script id="sheet-data" type="application/json">
-[
-  [
-    "Name",
-    "Amount",
-    "Memo"
-  ],
-  [
-    "Alice",
-    "aaa",
-    "test"
-  ],
-  [
-    "Bob",
-    "200",
-    ""
+{
+  "title": "One File Sheet",
+  "theme": "auto",
+  "lang": "auto",
+  "activeSheet": 0,
+  "sheets": [
+    {
+      "name": "Sheet1",
+      "data": [
+        [
+          "Name",
+          "Amount",
+          "Memo"
+        ],
+        [
+          "Alice",
+          "aaa",
+          "test"
+        ],
+        [
+          "Bob",
+          "200",
+          ""
+        ]
+      ]
+    }
   ]
-]
+}
 </script>
 
 <script id="app-code">
@@ -208,10 +369,223 @@ AGENT NOTES — contract for AI/coding agents editing this file:
 const table = document.getElementById("sheet");
 const statusEl = document.getElementById("save-status");
 const menuEl = document.getElementById("ctx-menu");
+const titleEl = document.getElementById("doc-title");
+const pathEl = document.getElementById("file-path");
+const tabsEl = document.getElementById("sheet-tabs");
+const helpBtn = document.getElementById("help-btn");
+const helpEl = document.getElementById("help-pop");
+const langBtn = document.getElementById("lang-btn");
+const themeBtn = document.getElementById("theme-btn");
+const themePop = document.getElementById("theme-pop");
+const themeIconSun = document.getElementById("theme-icon-sun");
+const themeIconMoon = document.getElementById("theme-icon-moon");
+
+// HTMLエクスポート用に、JSがDOMへ手を入れる前の素のドキュメントを控えておく
+const BOOT_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
 
 const DB_NAME = "one-file-sheet";
 const DB_STORE = "handles";
 const HANDLE_KEY = "self-file:" + location.href;
+// テーマは bg / fg / accent の3色だけ定義し、残りのCSS変数は themeVars() が導出する
+const THEME_LIST = [
+  { id: "light", name: "Light", bg: "#ffffff", fg: "#1a1a1a", accent: "#2563eb" },
+  { id: "dark", name: "Dark", bg: "#1e1e1e", fg: "#e6e6e6", accent: "#60a5fa" },
+  { id: "sepia", name: "Sepia", bg: "#f5ecd9", fg: "#4a3a26", accent: "#9a6b2f" },
+  { id: "ocean", name: "Ocean", bg: "#0e1a2b", fg: "#d7e4f2", accent: "#4cc3ff" },
+  { id: "forest", name: "Forest", bg: "#f1f7f0", fg: "#233a28", accent: "#2f855a" },
+  { id: "paper", name: "Paper", bg: "#fafaf7", fg: "#33322e", accent: "#d97706" },
+  { id: "snow", name: "Snow", bg: "#f7fafd", fg: "#26323f", accent: "#3b82f6" },
+  { id: "mint", name: "Mint", bg: "#effaf5", fg: "#1f3d33", accent: "#0d9488" },
+  { id: "sky", name: "Sky", bg: "#eef6ff", fg: "#1e3a5f", accent: "#0284c7" },
+  { id: "sand", name: "Sand", bg: "#f6f1e7", fg: "#43382a", accent: "#b45309" },
+  { id: "rose", name: "Rose", bg: "#fdf2f6", fg: "#4a2333", accent: "#db2777" },
+  { id: "lavender", name: "Lavender", bg: "#f5f2fc", fg: "#372f4d", accent: "#7c3aed" },
+  { id: "sakura", name: "Sakura", bg: "#fdf3f4", fg: "#502b33", accent: "#e11d48" },
+  { id: "lemon", name: "Lemon", bg: "#fdfbe8", fg: "#3f3a1a", accent: "#ca8a04" },
+  { id: "peach", name: "Peach", bg: "#fef3ee", fg: "#4d2f24", accent: "#ea580c" },
+  { id: "linen", name: "Linen", bg: "#faf6f0", fg: "#3f3a34", accent: "#a16207" },
+  { id: "aqua", name: "Aqua", bg: "#ecfcfb", fg: "#134e4a", accent: "#0891b2" },
+  { id: "pearl", name: "Pearl", bg: "#f4f4f6", fg: "#2f2f36", accent: "#6d28d9" },
+  { id: "midnight", name: "Midnight", bg: "#0f1115", fg: "#d5d9e0", accent: "#818cf8" },
+  { id: "charcoal", name: "Charcoal", bg: "#26282b", fg: "#dcdcdc", accent: "#f59e0b" },
+  { id: "slate", name: "Slate", bg: "#1f2937", fg: "#e2e8f0", accent: "#38bdf8" },
+  { id: "ink", name: "Ink", bg: "#101418", fg: "#c9d4de", accent: "#22d3ee" },
+  { id: "dracula", name: "Dracula", bg: "#282a36", fg: "#f8f8f2", accent: "#bd93f9" },
+  { id: "nord", name: "Nord", bg: "#2e3440", fg: "#eceff4", accent: "#88c0d0" },
+  { id: "solarized", name: "Solarized", bg: "#fdf6e3", fg: "#586e75", accent: "#268bd2" },
+  { id: "solarized-dark", name: "Solarized Dark", bg: "#002b36", fg: "#93a1a1", accent: "#2aa198" },
+  { id: "espresso", name: "Espresso", bg: "#2b211c", fg: "#e8d9cf", accent: "#d97706" },
+  { id: "wine", name: "Wine", bg: "#2a1520", fg: "#f1dae4", accent: "#f472b6" },
+  { id: "plum", name: "Plum", bg: "#241b2e", fg: "#e8ddf5", accent: "#c084fc" },
+  { id: "pine", name: "Pine", bg: "#12211a", fg: "#d2e8dc", accent: "#34d399" },
+  { id: "ember", name: "Ember", bg: "#1c1210", fg: "#f3ddd4", accent: "#f97316" },
+  { id: "terminal", name: "Terminal", bg: "#0a0f0a", fg: "#86efac", accent: "#22c55e" },
+];
+const THEME_MAP = {};
+THEME_LIST.forEach(t => { THEME_MAP[t.id] = t; });
+
+// UI文字列カタログ。doc.lang が "auto" のときはブラウザ言語に従う
+const MESSAGES = {
+  en: {
+    btnSave: "Save (Ctrl+S)",
+    btnReload: "Reload from file",
+    btnUndo: "Undo (Ctrl+Z)",
+    btnRedo: "Redo (Ctrl+Y)",
+    btnAddRow: "Add row",
+    btnAddCol: "Add column",
+    btnExport: "Export (HTML / CSV)",
+    btnHelp: "Help",
+    btnLang: "Language (saved in this file)",
+    themePrefix: "Theme: ",
+    titleEdit: "Click to edit the title",
+    statusChange: "Click to change the save target",
+    noTarget: "No save target",
+    target: "Save to: ",
+    unsaved: " ●unsaved",
+    colMenuTitle: "Click for column insert/delete menu",
+    rowMenuTitle: "Click for row insert/delete menu",
+    tabTitle: "Double-click to rename / right-click for menu",
+    addSheetTitle: "Add sheet",
+    insRowAbove: "Insert row above",
+    insRowBelow: "Insert row below",
+    delRow: "Delete row",
+    insColLeft: "Insert column left",
+    insColRight: "Insert column right",
+    delCol: "Delete column",
+    sheetRename: "Rename",
+    sheetLeft: "Move left",
+    sheetRight: "Move right",
+    sheetDelete: "Delete sheet",
+    exportHtmlItem: "Export HTML (app + all sheets)",
+    exportCsvItem: "Export CSV (current sheet)",
+    langAuto: "Auto (browser language)",
+    toastSaved: "✓ Saved: ",
+    toastReloaded: "Reloaded: ",
+    toastTargetSet: "Save target set: ",
+    toastCsv: "CSV exported: ",
+    toastHtml: "HTML exported",
+    lastRow: "Cannot delete the last row",
+    lastCol: "Cannot delete the last column",
+    lastSheet: "Cannot delete the last sheet",
+    helpTitle: "How to use",
+    help1: "Click the title to edit it",
+    help2: "Enter / Tab / arrow keys: move between cells (Enter on the last row adds a row)",
+    help3: "Alt+Enter: line break inside a cell",
+    help4: "Ctrl+S: save (the first save asks you to pick this file itself)",
+    help5: "Ctrl+Z / Ctrl+Y: undo / redo",
+    help6: "Click a row number / column letter: insert & delete menu",
+    help7: "Sheet tabs: click to switch, double-click to rename, right-click for menu",
+    help8: "Paste ranges from Excel / Google Sheets",
+    help9: "Download button: export HTML (app + all sheets) or CSV",
+    help10: "Click the save status to change the save target",
+    help11: "Pick a theme with the top-right button (32 themes + auto)",
+    help12: "Title, theme and all sheets are stored inside this single HTML file",
+    noFsApi: "This browser does not support the File System Access API. Please use Chrome or Edge. (Export HTML still works for saving your data.)",
+    pickFail: "Failed to pick a file: ",
+    noBlockInFile: "No sheet-data block found in the selected file.",
+    brokenJsonAdopt1: "The sheet-data JSON is broken: ",
+    brokenJsonAdopt2: "\nKeep the current table and only set this file as the save target?",
+    bootBroken1: "The sheet-data JSON is invalid: ",
+    bootBroken2: "\nStarting with an empty sheet.",
+    reloadNoTarget: "No save target yet. Use Save to pick the file first.",
+    confirmDiscardReload: "You have unsaved edits. Discard them and reload from the file?",
+    noReadPerm: "No permission to read the file.",
+    reloadFail: "Failed to reload: ",
+    checkFileMoved: "\nCheck that the file was not moved or deleted.",
+    noWritePerm: "No permission to save. Click the save status to pick the file again.",
+    saveNoBlock: "Save aborted: no sheet-data block found in the target file.",
+    confirmNullBaseline: "The current data in the target file could not be read (its JSON may be broken). Overwrite the file with this table?",
+    confirmConflict: "The data in the target file has changed since it was loaded (possibly edited by an AI agent). Overwrite?\nYou can cancel and use Reload to inspect the file's content.",
+    saveFail1: "Failed to save: ",
+    saveFail2: "\nCheck that the file was not moved or deleted; if needed, click the save status to pick it again.",
+    loadFail: "Failed to read the file: ",
+  },
+  ja: {
+    btnSave: "上書き保存 (Ctrl+S)",
+    btnReload: "再読み込み",
+    btnUndo: "元に戻す (Ctrl+Z)",
+    btnRedo: "やり直し (Ctrl+Y)",
+    btnAddRow: "行追加",
+    btnAddCol: "列追加",
+    btnExport: "エクスポート（HTML / CSV）",
+    btnHelp: "使い方",
+    btnLang: "言語（ファイルに保存されます）",
+    themePrefix: "テーマ: ",
+    titleEdit: "クリックでタイトルを編集",
+    statusChange: "クリックで保存先を変更",
+    noTarget: "保存先未設定",
+    target: "保存先: ",
+    unsaved: " ●未保存",
+    colMenuTitle: "クリックで列の挿入・削除",
+    rowMenuTitle: "クリックで行の挿入・削除",
+    tabTitle: "ダブルクリックで名前変更 / 右クリックでメニュー",
+    addSheetTitle: "シートを追加",
+    insRowAbove: "上に行を挿入",
+    insRowBelow: "下に行を挿入",
+    delRow: "行を削除",
+    insColLeft: "左に列を挿入",
+    insColRight: "右に列を挿入",
+    delCol: "列を削除",
+    sheetRename: "名前を変更",
+    sheetLeft: "左へ移動",
+    sheetRight: "右へ移動",
+    sheetDelete: "シートを削除",
+    exportHtmlItem: "HTML をエクスポート（アプリ＋全シート）",
+    exportCsvItem: "CSV を書き出し（現在のシート）",
+    langAuto: "Auto（ブラウザの言語）",
+    toastSaved: "✓ 保存しました: ",
+    toastReloaded: "再読み込みしました: ",
+    toastTargetSet: "保存先を設定しました: ",
+    toastCsv: "CSVを書き出しました: ",
+    toastHtml: "HTMLをエクスポートしました",
+    lastRow: "最後の行は削除できません",
+    lastCol: "最後の列は削除できません",
+    lastSheet: "最後のシートは削除できません",
+    helpTitle: "使い方",
+    help1: "タイトルをクリックすると編集できます",
+    help2: "Enter / Tab / 矢印キー: セル移動（最終行で Enter を押すと行を追加）",
+    help3: "Alt+Enter: セル内改行",
+    help4: "Ctrl+S: 上書き保存（初回はダイアログでこのファイル自身を選択）",
+    help5: "Ctrl+Z / Ctrl+Y: 元に戻す / やり直し",
+    help6: "行番号・列名をクリック: 行/列の挿入・削除メニュー",
+    help7: "シートタブ: クリックで切替、ダブルクリックで名前変更、右クリックでメニュー",
+    help8: "Excel / Google スプレッドシートからの範囲貼り付けに対応",
+    help9: "ダウンロードボタン: HTML（アプリ＋全シート）または CSV をエクスポート",
+    help10: "保存状態の表示をクリック: 保存先を変更",
+    help11: "右上のボタンでテーマを選択（32種類 + 自動）",
+    help12: "タイトル・テーマ・全シートは1つのHTMLファイル内に保存されます",
+    noFsApi: "このブラウザはFile System Access APIに対応していません。ChromeかEdgeで開いてください。（HTMLエクスポートでの保存は可能です）",
+    pickFail: "ファイル選択に失敗しました: ",
+    noBlockInFile: "選択したファイルに sheet-data ブロックが見つかりません。",
+    brokenJsonAdopt1: "sheet-data のJSONが壊れています: ",
+    brokenJsonAdopt2: "\n現在の表を保持したまま、このファイルを保存先として設定だけ行いますか？",
+    bootBroken1: "sheet-data のJSONが不正です: ",
+    bootBroken2: "\n空の表で開始します。",
+    reloadNoTarget: "保存先が未設定です。「上書き保存」からファイルを選んでください。",
+    confirmDiscardReload: "未保存の編集があります。破棄してファイルから読み込み直しますか？",
+    noReadPerm: "ファイルを読み込む権限がありません。",
+    reloadFail: "再読み込みに失敗しました: ",
+    checkFileMoved: "\nファイルが移動・削除されていないか確認してください。",
+    noWritePerm: "保存する権限がありません。保存先の表示をクリックしてファイルを選び直してください。",
+    saveNoBlock: "保存先ファイルに sheet-data ブロックが見つからないため、保存を中止しました。",
+    confirmNullBaseline: "保存先ファイルの現在のデータを読み込めていません（JSONが壊れている可能性があります）。ファイルのデータをこの表の内容で上書きしますか？",
+    confirmConflict: "保存先ファイルのデータが読み込み後に変更されています（AIエージェント等による編集の可能性）。上書きしますか？\nキャンセル後に「再読み込み」でファイル側の内容を確認できます。",
+    saveFail1: "保存に失敗しました: ",
+    saveFail2: "\nファイルが移動・削除されていないか確認し、必要なら保存先の表示をクリックして選び直してください。",
+    loadFail: "ファイルの読み込みに失敗しました: ",
+  },
+};
+
+function effLang() {
+  const chosen = typeof doc !== "undefined" && doc ? doc.lang : "auto";
+  if (chosen === "en" || chosen === "ja") return chosen;
+  return (navigator.language || "en").toLowerCase().startsWith("ja") ? "ja" : "en";
+}
+
+function t(key) {
+  const lang = effLang();
+  return (MESSAGES[lang] && MESSAGES[lang][key]) || MESSAGES.en[key] || key;
+}
 
 // id で照合するので属性の順序変更や追加には耐える。アプリ本体のソースには
 // このパターンに一致するタグ列が現れないよう、生成側はタグを分割して持つ。
@@ -237,25 +611,58 @@ try {
   editMode = "true";
 }
 
-let data;
+let doc;
 try {
   const raw = document.getElementById("sheet-data").textContent.trim();
-  data = normalizeData(JSON.parse(raw));
+  doc = normalizeDoc(JSON.parse(raw));
   lastLoadedJson = raw;
 } catch (error) {
-  alert("sheet-data のJSONが不正です: " + error.message + "\n空の表で開始します。");
-  data = [[""]];
+  alert(t("bootBroken1") + error.message + t("bootBroken2"));
+  doc = normalizeDoc([[""]]);
 }
+let data = doc.sheets[doc.activeSheet].data;
 
-function normalizeData(parsed) {
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    throw new Error("2次元配列ではありません");
-  }
-  const rows = parsed.map(row => (Array.isArray(row) ? row : [row]));
+function normalizeData(value) {
+  if (!Array.isArray(value) || value.length === 0) return [[""]];
+  const rows = value.map(row => (Array.isArray(row) ? row : [row]));
   const width = Math.max(1, ...rows.map(row => row.length));
   return rows.map(row =>
     Array.from({ length: width }, (_, i) => (row[i] == null ? "" : String(row[i])))
   );
+}
+
+function normalizeDoc(parsed) {
+  let title = "One File Sheet";
+  let theme = "auto";
+  let lang = "auto";
+  let activeSheet = 0;
+  let sheets;
+
+  if (Array.isArray(parsed)) {
+    sheets = [{ name: "Sheet1", data: parsed }];
+  } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.sheets)) {
+    if (typeof parsed.title === "string" && parsed.title.trim()) title = parsed.title.trim();
+    if (parsed.theme === "auto" || THEME_MAP[parsed.theme]) theme = parsed.theme;
+    if (parsed.lang === "en" || parsed.lang === "ja") lang = parsed.lang;
+    sheets = parsed.sheets;
+    activeSheet = parsed.activeSheet;
+  } else {
+    throw new Error("not a sheet document");
+  }
+
+  if (sheets.length === 0) sheets = [{ name: "Sheet1", data: [[""]] }];
+  const normSheets = sheets.map((s, i) => ({
+    name: s && typeof s.name === "string" && s.name.trim() ? s.name.trim() : "Sheet" + (i + 1),
+    data: normalizeData(s ? s.data : null),
+  }));
+  if (!Number.isInteger(activeSheet) || activeSheet < 0 || activeSheet >= normSheets.length) {
+    activeSheet = 0;
+  }
+  return { title: title, theme: theme, lang: lang, activeSheet: activeSheet, sheets: normSheets };
+}
+
+function syncData() {
+  data = doc.sheets[doc.activeSheet].data;
 }
 
 function colCount() {
@@ -272,6 +679,100 @@ function colLetter(c) {
   return s;
 }
 
+const darkMq = window.matchMedia("(prefers-color-scheme: dark)");
+darkMq.addEventListener("change", applyTheme);
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function mix(a, b, t) {
+  const A = hexToRgb(a);
+  const B = hexToRgb(b);
+  return "rgb(" + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",") + ")";
+}
+
+function rgba(hex, alpha) {
+  const [r, g, b] = hexToRgb(hex);
+  return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+}
+
+function isDarkColor(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128;
+}
+
+function themeVars(theme) {
+  const dark = isDarkColor(theme.bg);
+  return {
+    "--bg": theme.bg,
+    "--fg": theme.fg,
+    "--accent": theme.accent,
+    "--border": mix(theme.bg, theme.fg, 0.17),
+    "--head-bg": mix(theme.bg, theme.fg, 0.05),
+    "--coord-bg": mix(theme.bg, theme.fg, 0.08),
+    "--coord-fg": mix(theme.fg, theme.bg, 0.45),
+    "--hover": rgba(theme.accent, 0.08),
+    "--status": mix(theme.fg, theme.bg, 0.35),
+    "--ok": dark ? "#4ade80" : "#15803d",
+    "--warn": dark ? "#fbbf24" : "#b45309",
+    "--btn-bg": mix(theme.bg, theme.fg, 0.03),
+    "--btn-border": mix(theme.bg, theme.fg, 0.25),
+    "--menu-shadow": dark ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.18)",
+  };
+}
+
+function applyTheme() {
+  const id = doc.theme === "auto" ? (darkMq.matches ? "dark" : "light") : doc.theme;
+  const theme = THEME_MAP[id] || THEME_MAP.light;
+  const vars = themeVars(theme);
+  for (const key in vars) {
+    document.documentElement.style.setProperty(key, vars[key]);
+  }
+  const dark = isDarkColor(theme.bg);
+  // SVGElement に .hidden プロパティはないため属性で切り替える
+  themeIconSun.toggleAttribute("hidden", dark);
+  themeIconMoon.toggleAttribute("hidden", !dark);
+  themeBtn.title = t("themePrefix") + (doc.theme === "auto" ? "Auto (" + theme.name + ")" : theme.name);
+  themeBtn.setAttribute("aria-label", t("themePrefix") + theme.name);
+}
+
+function renderTitle() {
+  titleEl.textContent = doc.title;
+}
+
+function renderPath() {
+  let p;
+  if (location.protocol === "file:") {
+    p = decodeURIComponent(location.pathname);
+    if (/^\/[A-Za-z]:/.test(p)) p = p.slice(1);
+  } else {
+    p = location.href;
+  }
+  pathEl.textContent = p;
+  pathEl.title = p;
+}
+
+function renderTabs() {
+  tabsEl.innerHTML = "";
+  doc.sheets.forEach((s, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tab" + (i === doc.activeSheet ? " active" : "");
+    b.dataset.i = i;
+    b.textContent = s.name;
+    b.title = t("tabTitle");
+    tabsEl.appendChild(b);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "add-sheet";
+  add.textContent = "＋";
+  add.title = t("addSheetTitle");
+  tabsEl.appendChild(add);
+}
+
 function render() {
   const hadFocus = table.contains(document.activeElement);
   table.innerHTML = "";
@@ -285,7 +786,7 @@ function render() {
     th.className = "coord col-head";
     th.dataset.c = c;
     th.textContent = colLetter(c);
-    th.title = "クリックで列の挿入・削除";
+    th.title = t("colMenuTitle");
     coordRow.appendChild(th);
   }
   table.appendChild(coordRow);
@@ -297,7 +798,7 @@ function render() {
     rowHead.className = "coord row-head";
     rowHead.dataset.r = r;
     rowHead.textContent = r + 1;
-    rowHead.title = "クリックで行の挿入・削除";
+    rowHead.title = t("rowMenuTitle");
     tr.appendChild(rowHead);
 
     row.forEach((cell, c) => {
@@ -316,6 +817,44 @@ function render() {
   if (hadFocus && activePos) {
     focusCell(activePos.r, activePos.c, "end");
   }
+}
+
+function applyLang() {
+  [
+    ["save-btn", "btnSave"],
+    ["reload-btn", "btnReload"],
+    ["undo-btn", "btnUndo"],
+    ["redo-btn", "btnRedo"],
+    ["addrow-btn", "btnAddRow"],
+    ["addcol-btn", "btnAddCol"],
+    ["export-btn", "btnExport"],
+    ["help-btn", "btnHelp"],
+    ["lang-btn", "btnLang"],
+  ].forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.title = t(key);
+    el.setAttribute("aria-label", t(key));
+  });
+  langBtn.textContent = effLang().toUpperCase();
+  titleEl.title = t("titleEdit");
+  applyTheme();
+  refreshStatus();
+  renderTabs();
+  render();
+}
+
+function setLang(lang) {
+  if (doc.lang === lang) return;
+  doc.lang = lang;
+  markDirty();
+  applyLang();
+}
+
+function syncDocUI() {
+  syncData();
+  renderTitle();
+  applyLang();
 }
 
 function cellAt(r, c) {
@@ -347,9 +886,10 @@ function refreshStatus() {
     toastTimer = null;
   }
   statusEl.classList.remove("ok", "warn");
-  const base = fileHandle ? "保存先: " + fileHandle.name : "保存先未設定";
-  statusEl.textContent = base + (dirty ? " ●未保存" : "");
-  document.title = (dirty ? "● " : "") + "One File Sheet";
+  const base = fileHandle ? t("target") + fileHandle.name : t("noTarget");
+  statusEl.textContent = base + (dirty ? t("unsaved") : "");
+  statusEl.title = t("statusChange");
+  document.title = (dirty ? "● " : "") + doc.title;
 }
 
 function showToast(message, isWarn) {
@@ -364,7 +904,7 @@ function showToast(message, isWarn) {
 }
 
 function pushUndo() {
-  undoStack.push(JSON.stringify(data));
+  undoStack.push(JSON.stringify(doc));
   if (undoStack.length > 100) undoStack.shift();
   redoStack.length = 0;
 }
@@ -372,19 +912,19 @@ function pushUndo() {
 function undo() {
   hideMenu();
   if (!undoStack.length) return;
-  redoStack.push(JSON.stringify(data));
-  data = JSON.parse(undoStack.pop());
+  redoStack.push(JSON.stringify(doc));
+  doc = JSON.parse(undoStack.pop());
+  syncDocUI();
   markDirty();
-  render();
 }
 
 function redo() {
   hideMenu();
   if (!redoStack.length) return;
-  undoStack.push(JSON.stringify(data));
-  data = JSON.parse(redoStack.pop());
+  undoStack.push(JSON.stringify(doc));
+  doc = JSON.parse(redoStack.pop());
+  syncDocUI();
   markDirty();
-  render();
 }
 
 function insertRow(at) {
@@ -396,7 +936,7 @@ function insertRow(at) {
 
 function deleteRow(at) {
   if (data.length <= 1) {
-    showToast("最後の行は削除できません", true);
+    showToast(t("lastRow"), true);
     return;
   }
   pushUndo();
@@ -415,7 +955,7 @@ function insertCol(at) {
 
 function deleteCol(at) {
   if (colCount() <= 1) {
-    showToast("最後の列は削除できません", true);
+    showToast(t("lastCol"), true);
     return;
   }
   pushUndo();
@@ -431,6 +971,113 @@ function addRow() {
 
 function addCol() {
   insertCol(colCount());
+}
+
+function sheetName(base) {
+  let n = doc.sheets.length + 1;
+  let name = base + n;
+  const names = doc.sheets.map(s => s.name);
+  while (names.includes(name)) {
+    n++;
+    name = base + n;
+  }
+  return name;
+}
+
+function addSheet() {
+  pushUndo();
+  doc.sheets.push({
+    name: sheetName("Sheet"),
+    data: Array.from({ length: 4 }, () => ["", "", ""]),
+  });
+  doc.activeSheet = doc.sheets.length - 1;
+  syncData();
+  activePos = null;
+  markDirty();
+  renderTabs();
+  render();
+}
+
+function switchSheet(i) {
+  if (i === doc.activeSheet || i < 0 || i >= doc.sheets.length) return;
+  doc.activeSheet = i;
+  syncData();
+  activePos = null;
+  renderTabs();
+  render();
+}
+
+// prompt() は埋め込みブラウザで抑止されることがあるため、タブ上で直接編集する
+function startRenameSheet(i) {
+  switchSheet(i);
+  const tab = tabsEl.querySelector('.tab[data-i="' + i + '"]');
+  if (!tab) return;
+  const original = doc.sheets[i].name;
+  tab.setAttribute("contenteditable", editMode);
+  tab.focus();
+  const range = document.createRange();
+  range.selectNodeContents(tab);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  // blur が起きない環境でも確定できるよう、Enter/Escape でも直接 finish する
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    tab.removeAttribute("contenteditable");
+    const name = tab.textContent.replace(/\n/g, " ").trim();
+    if (name && name !== original) {
+      pushUndo();
+      doc.sheets[i].name = name;
+      markDirty();
+    }
+    renderTabs();
+  };
+
+  tab.addEventListener("focusout", finish, { once: true });
+  tab.addEventListener("keydown", e => {
+    if (e.isComposing) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      tab.blur();
+      finish();
+    } else if (e.key === "Escape") {
+      e.stopPropagation();
+      tab.textContent = original;
+      tab.blur();
+      finish();
+    }
+  });
+}
+
+function deleteSheet(i) {
+  if (doc.sheets.length <= 1) {
+    showToast(t("lastSheet"), true);
+    return;
+  }
+  pushUndo();
+  doc.sheets.splice(i, 1);
+  if (doc.activeSheet >= doc.sheets.length) doc.activeSheet = doc.sheets.length - 1;
+  else if (doc.activeSheet > i) doc.activeSheet--;
+  syncData();
+  activePos = null;
+  markDirty();
+  renderTabs();
+  render();
+}
+
+function moveSheet(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= doc.sheets.length) return;
+  pushUndo();
+  const [s] = doc.sheets.splice(i, 1);
+  doc.sheets.splice(j, 0, s);
+  if (doc.activeSheet === i) doc.activeSheet = j;
+  else if (doc.activeSheet === j) doc.activeSheet = i;
+  markDirty();
+  renderTabs();
 }
 
 function showMenu(x, y, items) {
@@ -464,16 +1111,16 @@ function headMenuHandler(e) {
   if (rowHead) {
     const r = Number(rowHead.dataset.r);
     showMenu(e.clientX, e.clientY, [
-      ["上に行を挿入", () => insertRow(r)],
-      ["下に行を挿入", () => insertRow(r + 1)],
-      ["行を削除", () => deleteRow(r)],
+      [t("insRowAbove"), () => insertRow(r)],
+      [t("insRowBelow"), () => insertRow(r + 1)],
+      [t("delRow"), () => deleteRow(r)],
     ]);
   } else {
     const c = Number(colHead.dataset.c);
     showMenu(e.clientX, e.clientY, [
-      ["左に列を挿入", () => insertCol(c)],
-      ["右に列を挿入", () => insertCol(c + 1)],
-      ["列を削除", () => deleteCol(c)],
+      [t("insColLeft"), () => insertCol(c)],
+      [t("insColRight"), () => insertCol(c + 1)],
+      [t("delCol"), () => deleteCol(c)],
     ]);
   }
 }
@@ -511,7 +1158,7 @@ table.addEventListener("focusin", e => {
   const cell = e.target.closest(".cell");
   if (!cell) return;
   activePos = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
-  pendingSnapshot = JSON.stringify(data);
+  pendingSnapshot = JSON.stringify(doc);
   cellEdited = false;
 });
 
@@ -666,9 +1313,156 @@ table.addEventListener("paste", e => {
   focusCell(r0, c0, "end");
 });
 
+tabsEl.addEventListener("click", e => {
+  if (e.target.closest(".add-sheet")) {
+    addSheet();
+    return;
+  }
+  const tab = e.target.closest(".tab");
+  if (tab) switchSheet(Number(tab.dataset.i));
+});
+
+tabsEl.addEventListener("dblclick", e => {
+  const tab = e.target.closest(".tab");
+  if (tab && !tab.hasAttribute("contenteditable")) startRenameSheet(Number(tab.dataset.i));
+});
+
+tabsEl.addEventListener("contextmenu", e => {
+  const tab = e.target.closest(".tab");
+  if (!tab) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const i = Number(tab.dataset.i);
+  showMenu(e.clientX, e.clientY, [
+    [t("sheetRename"), () => startRenameSheet(i)],
+    [t("sheetLeft"), () => moveSheet(i, -1)],
+    [t("sheetRight"), () => moveSheet(i, 1)],
+    [t("sheetDelete"), () => deleteSheet(i)],
+  ]);
+});
+
+let titlePending = null;
+let titleEdited = false;
+
+titleEl.setAttribute("contenteditable", editMode);
+
+titleEl.addEventListener("focusin", () => {
+  titlePending = JSON.stringify(doc);
+  titleEdited = false;
+});
+
+titleEl.addEventListener("input", () => {
+  if (!titleEdited && titlePending !== null) {
+    undoStack.push(titlePending);
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack.length = 0;
+    titleEdited = true;
+  }
+  doc.title = titleEl.textContent.replace(/\n/g, " ").trim() || "One File Sheet";
+  markDirty();
+});
+
+titleEl.addEventListener("keydown", e => {
+  if (e.isComposing) return;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    titleEl.blur();
+  }
+});
+
+titleEl.addEventListener("focusout", () => {
+  renderTitle();
+});
+
+function hideHelp() {
+  helpEl.hidden = true;
+}
+
+function hideThemePop() {
+  themePop.hidden = true;
+}
+
+helpBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (!helpEl.hidden) {
+    hideHelp();
+    return;
+  }
+  hideMenu();
+  hideThemePop();
+  helpEl.innerHTML = "";
+  const heading = document.createElement("b");
+  heading.textContent = t("helpTitle");
+  helpEl.appendChild(heading);
+  const list = document.createElement("ul");
+  for (let i = 1; i <= 12; i++) {
+    const li = document.createElement("li");
+    li.textContent = t("help" + i);
+    list.appendChild(li);
+  }
+  helpEl.appendChild(list);
+  helpEl.hidden = false;
+  const btnRect = helpBtn.getBoundingClientRect();
+  const popRect = helpEl.getBoundingClientRect();
+  helpEl.style.left = Math.max(8, Math.min(btnRect.left, window.innerWidth - popRect.width - 8)) + "px";
+  helpEl.style.top = (btnRect.bottom + 6) + "px";
+});
+
+function renderThemePicker() {
+  themePop.innerHTML = "";
+  const makeItem = (id, name, theme) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "theme-item" + (doc.theme === id ? " active" : "");
+    const dot = document.createElement("span");
+    dot.className = "swatch";
+    if (theme) {
+      dot.style.background = theme.bg;
+      dot.style.borderColor = theme.accent;
+    } else {
+      dot.style.background = "linear-gradient(135deg, #ffffff 50%, #1e1e1e 50%)";
+      dot.style.borderColor = "#888";
+    }
+    b.appendChild(dot);
+    b.appendChild(document.createTextNode(name));
+    b.onclick = e => {
+      e.stopPropagation();
+      if (doc.theme !== id) {
+        doc.theme = id;
+        applyTheme();
+        markDirty();
+        renderThemePicker();
+      }
+    };
+    themePop.appendChild(b);
+  };
+  makeItem("auto", "Auto", null);
+  THEME_LIST.forEach(t => makeItem(t.id, t.name, t));
+}
+
+themeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (!themePop.hidden) {
+    hideThemePop();
+    return;
+  }
+  hideMenu();
+  hideHelp();
+  renderThemePicker();
+  themePop.hidden = false;
+  const btnRect = themeBtn.getBoundingClientRect();
+  const popRect = themePop.getBoundingClientRect();
+  themePop.style.left = Math.max(8, Math.min(btnRect.right - popRect.width, window.innerWidth - popRect.width - 8)) + "px";
+  themePop.style.top = (btnRect.bottom + 6) + "px";
+});
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
-    if (!menuEl.hidden) {
+    if (!themePop.hidden) {
+      hideThemePop();
+    } else if (!helpEl.hidden) {
+      hideHelp();
+    } else if (!menuEl.hidden) {
       hideMenu();
     } else if (table.contains(document.activeElement)) {
       document.activeElement.blur();
@@ -694,10 +1488,14 @@ document.addEventListener("keydown", e => {
 
 document.addEventListener("click", e => {
   if (!menuEl.hidden && !menuEl.contains(e.target)) hideMenu();
+  if (!helpEl.hidden && !helpEl.contains(e.target)) hideHelp();
+  if (!themePop.hidden && !themePop.contains(e.target)) hideThemePop();
 });
 
 document.addEventListener("contextmenu", e => {
   if (!menuEl.hidden && !menuEl.contains(e.target)) hideMenu();
+  if (!helpEl.hidden && !helpEl.contains(e.target)) hideHelp();
+  if (!themePop.hidden && !themePop.contains(e.target)) hideThemePop();
 });
 
 window.addEventListener("beforeunload", e => {
@@ -760,7 +1558,7 @@ async function extractSheetJson(handle) {
   const text = await file.text();
   const match = text.match(SHEET_DATA_RE);
   if (!match) {
-    alert("選択したファイルに sheet-data ブロックが見つかりません。");
+    alert(t("noBlockInFile"));
     return null;
   }
   // ディスク側は CRLF の可能性があるため LF に正規化して比較の土台を揃える
@@ -773,14 +1571,14 @@ async function adoptHandle(handle, loadData) {
 
   if (loadData) {
     try {
-      data = normalizeData(JSON.parse(rawJson));
+      doc = normalizeDoc(JSON.parse(rawJson));
       dirty = false;
       undoStack.length = 0;
       redoStack.length = 0;
       activePos = null;
-      render();
+      syncDocUI();
     } catch (error) {
-      if (!confirm("sheet-data のJSONが壊れています: " + error.message + "\n現在の表を保持したまま、このファイルを保存先として設定だけ行いますか？")) {
+      if (!confirm(t("brokenJsonAdopt1") + error.message + t("brokenJsonAdopt2"))) {
         return false;
       }
     }
@@ -792,86 +1590,79 @@ async function adoptHandle(handle, loadData) {
   return true;
 }
 
-async function openSelfFile() {
+async function pickFile() {
   if (!window.showOpenFilePicker) {
-    alert("このブラウザはFile System Access APIに対応していません。ChromeかEdgeで開いてください。");
-    return;
+    alert(t("noFsApi"));
+    return null;
   }
-
-  let handle;
   try {
-    [handle] = await window.showOpenFilePicker({
+    const [handle] = await window.showOpenFilePicker({
       types: [{
         description: "HTML File",
         accept: { "text/html": [".html"] }
       }]
     });
+    return handle;
   } catch (error) {
-    if (error && error.name === "AbortError") return;
-    alert("ファイル選択に失敗しました: " + error.message);
-    return;
+    if (error && error.name === "AbortError") return null;
+    alert(t("pickFail") + error.message);
+    return null;
   }
+}
 
-  let loadData = true;
-  if (dirty) {
-    if (confirm("未保存の編集があります。選択したファイルの内容を読み込んで、現在の編集を破棄しますか？")) {
-      loadData = true;
-    } else if (confirm("編集を保持したまま、選択したファイルを保存先として設定しますか？\n（キャンセルで中止します）")) {
-      loadData = false;
-    } else {
-      return;
-    }
-  }
+// 初回保存時に呼ばれる: 現在の編集内容を保持したまま保存先だけを設定する
+async function pickSaveTarget() {
+  const handle = await pickFile();
+  if (!handle) return false;
 
   try {
-    if (!(await adoptHandle(handle, loadData))) return;
+    if (!(await adoptHandle(handle, false))) return false;
   } catch (error) {
-    alert("ファイルの読み込みに失敗しました: " + error.message);
-    return;
+    alert(t("loadFail") + error.message);
+    return false;
   }
 
   try {
     await saveStoredHandle(handle);
   } catch (error) {
-    console.warn("保存先の記録に失敗しました。", error);
+    console.warn("failed to persist save target handle", error);
   }
-
-  showToast(loadData ? "読み込みました: " + handle.name : "保存先を設定しました: " + handle.name);
+  return true;
 }
 
 async function reloadFromFile() {
   if (!fileHandle) {
-    alert("先に「保存先を設定」で保存対象のHTMLファイルを選んでください。");
+    alert(t("reloadNoTarget"));
     return;
   }
-  if (dirty && !confirm("未保存の編集があります。破棄してファイルから読み込み直しますか？")) {
+  if (dirty && !confirm(t("confirmDiscardReload"))) {
     return;
   }
   try {
     if ((await fileHandle.queryPermission({ mode: "read" })) !== "granted" &&
         (await fileHandle.requestPermission({ mode: "read" })) !== "granted") {
-      alert("ファイルを読み込む権限がありません。");
+      alert(t("noReadPerm"));
       return;
     }
     if (await adoptHandle(fileHandle, true)) {
-      showToast("再読み込みしました: " + fileHandle.name);
+      showToast(t("toastReloaded") + fileHandle.name);
     }
   } catch (error) {
-    alert("再読み込みに失敗しました: " + error.message + "\nファイルが移動・削除されていないか確認してください。");
+    alert(t("reloadFail") + error.message + t("checkFileMoved"));
   }
 }
 
 async function saveToSameFile() {
   if (saving) return;
   if (!fileHandle) {
-    alert("先に「保存先を設定」で保存対象のHTMLファイルを選んでください。");
-    return;
+    // 保存先が未設定なら、その場でファイルを選んでそのまま保存まで進む
+    if (!(await pickSaveTarget())) return;
   }
 
   saving = true;
   try {
     if (!(await verifyWritePermission(fileHandle))) {
-      alert("保存する権限がありません。もう一度「保存先を設定」からHTMLファイルを選んでください。");
+      alert(t("noWritePerm"));
       return;
     }
 
@@ -880,23 +1671,23 @@ async function saveToSameFile() {
 
     const match = html.match(SHEET_DATA_RE);
     if (!match) {
-      alert("保存先ファイルに sheet-data ブロックが見つからないため、保存を中止しました。");
+      alert(t("saveNoBlock"));
       return;
     }
 
     const diskJson = match[1].replace(/\r\n?/g, "\n").trim();
     if (lastLoadedJson === null) {
-      if (!confirm("保存先ファイルの現在のデータを読み込めていません（JSONが壊れている可能性があります）。ファイルのデータをこの表の内容で上書きしますか？")) {
+      if (!confirm(t("confirmNullBaseline"))) {
         return;
       }
     } else if (diskJson !== lastLoadedJson) {
-      if (!confirm("保存先ファイルのデータが読み込み後に変更されています（AIエージェント等による編集の可能性）。上書きしますか？\nキャンセル後に「再読み込み」でファイル側の内容を確認できます。")) {
+      if (!confirm(t("confirmConflict"))) {
         return;
       }
     }
 
     // "<" を \u003c にエスケープし、セル内に閉じタグ相当の文字列があってもブロックが壊れないようにする
-    const json = JSON.stringify(data, null, 2).replace(/</g, "\\u003c");
+    const json = JSON.stringify(doc, null, 2).replace(/</g, "\\u003c");
     const newBlock = OPEN_TAG + "\n" + json + "\n" + CLOSE_TAG;
     // 置換文字列中の $ が特殊解釈されないよう、関数で渡す
     const updated = html.replace(SHEET_DATA_RE, () => newBlock);
@@ -908,27 +1699,79 @@ async function saveToSameFile() {
     lastLoadedJson = json;
     dirty = false;
     refreshStatus();
-    showToast("✓ 保存しました: " + fileHandle.name);
+    showToast(t("toastSaved") + fileHandle.name);
   } catch (error) {
-    alert("保存に失敗しました: " + error.message + "\nファイルが移動・削除されていないか確認し、必要なら「保存先を設定」からやり直してください。");
+    alert(t("saveFail1") + error.message + t("saveFail2"));
   } finally {
     saving = false;
   }
 }
 
-function exportCsv() {
-  const escapeCsv = value => (/[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value);
-  const csv = "\uFEFF" + data.map(row => row.map(escapeCsv).join(",")).join("\r\n") + "\r\n";
-  const blob = new Blob([csv], { type: "text/csv" });
+function sanitizeName(name) {
+  return name.replace(/[\\/:*?"<>|]/g, "_");
+}
+
+function downloadBlob(blob, filename) {
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = (fileHandle ? fileHandle.name.replace(/\.html?$/i, "") : "OneFileSheet") + ".csv";
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
 }
 
+function exportCsv() {
+  const escapeCsv = value => (/[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value);
+  const csv = "\uFEFF" + data.map(row => row.map(escapeCsv).join(",")).join("\r\n") + "\r\n";
+  const base = fileHandle ? fileHandle.name.replace(/\.html?$/i, "") : doc.title;
+  const sheet = doc.sheets[doc.activeSheet].name;
+  downloadBlob(new Blob([csv], { type: "text/csv" }), sanitizeName(base + "_" + sheet) + ".csv");
+  showToast(t("toastCsv") + sheet);
+}
+
+// \u8D77\u52D5\u6642\u306E\u7D20\u306EHTML\u306B\u73FE\u5728\u306E\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3092\u5DEE\u3057\u8FBC\u3093\u3060\u300C\u81EA\u5206\u81EA\u8EAB\u306E\u8907\u88FD\u300D\u3092\u4F5C\u308B\u3002
+// File System Access API \u306B\u975E\u5BFE\u5FDC\u306E\u30D6\u30E9\u30A6\u30B6\u3084\u30C7\u30E2\u30DA\u30FC\u30B8\u3067\u3082\u4FDD\u5B58\u624B\u6BB5\u306B\u306A\u308B
+function buildExportHtml() {
+  const json = JSON.stringify(doc, null, 2).replace(/</g, "\\u003c");
+  const newBlock = OPEN_TAG + "\n" + json + "\n" + CLOSE_TAG;
+  return BOOT_HTML.replace(SHEET_DATA_RE, () => newBlock);
+}
+
+function exportHtml() {
+  downloadBlob(new Blob([buildExportHtml()], { type: "text/html" }), sanitizeName(doc.title || "OneFileSheet") + ".html");
+  showToast(t("toastHtml"));
+}
+
+document.getElementById("export-btn").addEventListener("click", e => {
+  e.stopPropagation();
+  hideHelp();
+  hideThemePop();
+  const rect = e.currentTarget.getBoundingClientRect();
+  showMenu(rect.left, rect.bottom + 6, [
+    [t("exportHtmlItem"), exportHtml],
+    [t("exportCsvItem"), exportCsv],
+  ]);
+});
+
+statusEl.addEventListener("click", async () => {
+  if (!(await pickSaveTarget())) return;
+  showToast(t("toastTargetSet") + fileHandle.name);
+});
+
+langBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  hideHelp();
+  hideThemePop();
+  const rect = e.currentTarget.getBoundingClientRect();
+  showMenu(rect.left, rect.bottom + 6, [
+    [t("langAuto"), () => setLang("auto")],
+    ["English", () => setLang("en")],
+    ["\u65E5\u672C\u8A9E", () => setLang("ja")],
+  ]);
+});
+
 async function initialize() {
-  render();
+  renderPath();
+  syncDocUI();
   refreshStatus();
 
   if (!window.showOpenFilePicker || !window.indexedDB) {
@@ -939,7 +1782,7 @@ async function initialize() {
     fileHandle = await loadStoredHandle();
     refreshStatus();
   } catch (error) {
-    console.warn("保存先の復元に失敗しました。", error);
+    console.warn("failed to restore save target handle", error);
   }
 }
 
