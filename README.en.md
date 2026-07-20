@@ -8,6 +8,8 @@ A self-saving spreadsheet that lives in a single HTML file.
 
 **[▶ Open the demo in your browser](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** — try editing, pasting and undo right away. Use "Export HTML" on the download button to save your edits as a file that contains both the app and your data.
 
+**[⬇ Download (latest release)](https://github.com/firemio/OneFileSheet/releases/latest)** — grab the attached `OneFileSheet.html` and just open it in a browser.
+
 ## Why
 
 When small tables live in xls files or Google Sheets, it is a hassle to let AI agents dig into them or to diff the edits.
@@ -39,7 +41,7 @@ Not a good fit for: confidential data (stored as plain text), formula-driven cal
 
 ## Usage
 
-1. Open `OneFileSheet.html` in a browser.
+1. Download `OneFileSheet.html` from the [releases page](https://github.com/firemio/OneFileSheet/releases/latest) and open it in a browser.
 2. Edit the table.
 3. Press "Save" or Ctrl+S. On Chrome / Edge a file dialog appears only on the first save — pick `OneFileSheet.html` itself and it saves right away. After that it is one click.
 4. On unsupported browsers, saving automatically downloads the HTML instead.

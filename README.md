@@ -8,6 +8,8 @@
 
 **[▶ ブラウザでデモを開く](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** — そのまま編集・貼り付け・アンドゥを試せます。編集内容はダウンロードボタンの「HTML をエクスポート」で、アプリ＋データ入りのファイルとして保存できます。
 
+**[⬇ ダウンロード（最新リリース）](https://github.com/firemio/OneFileSheet/releases/latest)** — 添付の `OneFileSheet.html` を1つ入手してブラウザで開くだけで使えます。
+
 ## なぜ作ったか
 
 ちょっとした表データが xls や Google スプレッドシートに入っていると、AI エージェントに中身を探させたり、編集内容の diff を取ったりするのが面倒です。
@@ -39,7 +41,7 @@ One File Sheet は、表計算アプリとデータを1つのHTMLファイルに
 
 ## 使い方
 
-1. `OneFileSheet.html` をブラウザで開きます。
+1. [リリースページ](https://github.com/firemio/OneFileSheet/releases/latest)から `OneFileSheet.html` をダウンロードし、ブラウザで開きます。
 2. 表を編集します。
 3. 「上書き保存」または Ctrl+S を押します。Chrome / Edge では初回だけファイル選択ダイアログが開くので、`OneFileSheet.html` 自身を選ぶとそのまま保存されます。2回目以降はワンクリックです。
 4. 非対応ブラウザでは、保存が自動的にHTMLダウンロードになります。
