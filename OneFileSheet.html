@@ -243,6 +243,26 @@
     color: var(--fg);
   }
   #ctx-menu button:hover { background: var(--hover); color: var(--accent); }
+  #drop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  }
+  #drop-overlay[hidden] { display: none; }
+  #drop-overlay .drop-box {
+    padding: 24px 48px;
+    border: 2px dashed var(--accent);
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 16px;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
@@ -288,6 +308,8 @@
 <div id="help-pop" hidden></div>
 
 <div id="theme-pop" hidden></div>
+
+<div id="drop-overlay" hidden><div class="drop-box"></div></div>
 
 <div id="sheet-tabs"></div>
 
@@ -386,6 +408,7 @@ const BOOT_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
 const DB_NAME = "one-file-sheet";
 const DB_STORE = "handles";
 const HANDLE_KEY = "self-file:" + location.href;
+const LAST_HANDLE_KEY = "last-picked";
 // テーマは bg / fg / accent の3色だけ定義し、残りのCSS変数は themeVars() が導出する
 const THEME_LIST = [
   { id: "light", name: "Light", bg: "#ffffff", fg: "#1a1a1a", accent: "#2563eb" },
@@ -460,6 +483,7 @@ const MESSAGES = {
     exportCsvItem: "Export CSV (current sheet)",
     langAuto: "Auto (browser language)",
     toastSaved: "✓ Saved: ",
+    toastLoaded: "Loaded: ",
     toastReloaded: "Reloaded: ",
     toastTargetSet: "Save target set: ",
     toastCsv: "CSV exported: ",
@@ -480,6 +504,8 @@ const MESSAGES = {
     help10: "Click the save status to change the save target",
     help11: "Pick a theme with the top-right button (32 themes + auto)",
     help12: "Title, theme and all sheets are stored inside this single HTML file",
+    help13: "Drop an HTML file onto the page: open it / set it as the save target (keeps unsaved edits)",
+    dropHint: "Drop here: open the file / set it as the save target",
     noFsApi: "This browser does not support the File System Access API. Please use Chrome or Edge. (Export HTML still works for saving your data.)",
     pickFail: "Failed to pick a file: ",
     noBlockInFile: "No sheet-data block found in the selected file.",
@@ -534,6 +560,7 @@ const MESSAGES = {
     exportCsvItem: "CSV を書き出し（現在のシート）",
     langAuto: "Auto（ブラウザの言語）",
     toastSaved: "✓ 保存しました: ",
+    toastLoaded: "読み込みました: ",
     toastReloaded: "再読み込みしました: ",
     toastTargetSet: "保存先を設定しました: ",
     toastCsv: "CSVを書き出しました: ",
@@ -554,6 +581,8 @@ const MESSAGES = {
     help10: "保存状態の表示をクリック: 保存先を変更",
     help11: "右上のボタンでテーマを選択（32種類 + 自動）",
     help12: "タイトル・テーマ・全シートは1つのHTMLファイル内に保存されます",
+    help13: "HTMLファイルをページにドロップ: 読み込み / 保存先の設定（未保存の編集があるときは保存先のみ）",
+    dropHint: "ここにドロップ: 読み込み / 保存先を設定",
     noFsApi: "このブラウザはFile System Access APIに対応していません。ChromeかEdgeで開いてください。（HTMLエクスポートでの保存は可能です）",
     pickFail: "ファイル選択に失敗しました: ",
     noBlockInFile: "選択したファイルに sheet-data ブロックが見つかりません。",
@@ -1395,7 +1424,7 @@ helpBtn.addEventListener("click", e => {
   heading.textContent = t("helpTitle");
   helpEl.appendChild(heading);
   const list = document.createElement("ul");
-  for (let i = 1; i <= 12; i++) {
+  for (let i = 1; i <= 13; i++) {
     const li = document.createElement("li");
     li.textContent = t("help" + i);
     list.appendChild(li);
@@ -1505,6 +1534,48 @@ window.addEventListener("beforeunload", e => {
   }
 });
 
+// ドラッグ&ドロップでもハンドルを取得できる（ピッカーを経由しない許可経路）。
+// 未保存の編集があるときはデータを保持したまま保存先の設定のみ行う
+const dropOverlay = document.getElementById("drop-overlay");
+let dropHideTimer = null;
+
+window.addEventListener("dragover", e => {
+  if (e.dataTransfer && [...e.dataTransfer.items].some(item => item.kind === "file")) {
+    e.preventDefault();
+    dropOverlay.querySelector(".drop-box").textContent = t("dropHint");
+    dropOverlay.hidden = false;
+    // dragover はホバー中連続発火するため、途切れたら少し後に隠す
+    if (dropHideTimer) clearTimeout(dropHideTimer);
+    dropHideTimer = setTimeout(() => { dropOverlay.hidden = true; }, 200);
+  }
+});
+
+window.addEventListener("drop", e => {
+  dropOverlay.hidden = true;
+  if (!e.dataTransfer) return;
+  const item = [...e.dataTransfer.items].find(it => it.kind === "file");
+  if (!item) return;
+  e.preventDefault();
+  if (!item.getAsFileSystemHandle) return;
+  const handlePromise = item.getAsFileSystemHandle();
+  (async () => {
+    try {
+      const handle = await handlePromise;
+      if (!handle || handle.kind !== "file" || !/\.html?$/i.test(handle.name)) return;
+      const loadData = !dirty;
+      if (!(await adoptHandle(handle, loadData))) return;
+      try {
+        await saveStoredHandle(handle);
+      } catch (error) {
+        console.warn("failed to persist save target handle", error);
+      }
+      showToast((loadData ? t("toastLoaded") : t("toastTargetSet")) + handle.name);
+    } catch (error) {
+      alert(t("loadFail") + error.message);
+    }
+  })();
+});
+
 function openHandleDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
@@ -1524,6 +1595,8 @@ async function saveStoredHandle(handle) {
   await new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readwrite");
     tx.objectStore(DB_STORE).put(handle, HANDLE_KEY);
+    // 次回ピッカーの初期フォルダ用に、URLに依らない「最後に選んだハンドル」も控える
+    tx.objectStore(DB_STORE).put(handle, LAST_HANDLE_KEY);
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
@@ -1531,12 +1604,12 @@ async function saveStoredHandle(handle) {
   db.close();
 }
 
-async function loadStoredHandle() {
+async function loadStoredHandle(key) {
   const db = await openHandleDB();
 
   const handle = await new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readonly");
-    const request = tx.objectStore(DB_STORE).get(HANDLE_KEY);
+    const request = tx.objectStore(DB_STORE).get(key || HANDLE_KEY);
     request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
   });
@@ -1590,18 +1663,43 @@ async function adoptHandle(handle, loadData) {
   return true;
 }
 
+// パス文字列からピッカーへ直接パスを渡すことはAPI仕様上できないため、
+// 自分のパスから既知フォルダを推測して初期フォルダだけ合わせる
+function pickerStartIn() {
+  if (location.protocol !== "file:") return null;
+  const p = decodeURIComponent(location.pathname).toLowerCase();
+  if (p.includes("/downloads/")) return "downloads";
+  if (p.includes("/desktop/")) return "desktop";
+  if (p.includes("/documents/")) return "documents";
+  return null;
+}
+
 async function pickFile() {
   if (!window.showOpenFilePicker) {
     alert(t("noFsApi"));
     return null;
   }
   try {
-    const [handle] = await window.showOpenFilePicker({
+    const options = {
+      id: "one-file-sheet",
       types: [{
         description: "HTML File",
         accept: { "text/html": [".html"] }
       }]
-    });
+    };
+    // 初期フォルダの優先順: 現在の保存先 > このファイルの記録 > 最後に選んだファイル
+    // > パスから推測した既知フォルダ。ハンドルを渡すとそのファイルのフォルダで開く
+    let anchor = fileHandle;
+    if (!anchor) {
+      try {
+        anchor = (await loadStoredHandle(HANDLE_KEY)) || (await loadStoredHandle(LAST_HANDLE_KEY));
+      } catch (error) {
+        anchor = null;
+      }
+    }
+    const startIn = anchor || pickerStartIn();
+    if (startIn) options.startIn = startIn;
+    const [handle] = await window.showOpenFilePicker(options);
     return handle;
   } catch (error) {
     if (error && error.name === "AbortError") return null;
