@@ -19,7 +19,7 @@ Tables in xls or the cloud are awkward for AI agents to read and impossible to d
 - **Spreadsheet basics** — multiple sheets, range paste from Excel / Google Sheets, row/column insert & delete, undo / redo, Alt+Enter for in-cell line breaks
 - **Quick stats** — header chart icons show count / sum / average / max / min; nothing is written to cells
 - **Fast with thousands of rows** — virtualized rendering, pinned headers
-- **43 themes + EN/JA UI** — saved inside the file, so it looks the same everywhere
+- **47 themes + EN/JA UI** — saved inside the file, so it looks the same everywhere
 - **AI-agent friendly** — pretty-printed JSON, an editing contract (AGENT NOTES) ships in the file, external edits are detected at save time
 
 ## Good fits
