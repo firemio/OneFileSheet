@@ -26,7 +26,10 @@ Tables in xls or the cloud are awkward for AI agents to read and impossible to d
 
 | Use it for | Why it works |
 |---|---|
-| An AI agent's worksheet | Agents read/write the JSON directly; `git diff` shows every change |
+| A shared sheet with AI agents | "Write your findings into this table", "work through these TODOs" — humans use the browser, agents read/write the JSON |
+| An output template for LLMs | Hand an empty sheet over with "answer in this format" — the returned JSON opens as a table |
+| A dashboard you can hand out | A cron job / CI rewrites the sheet-data block: open = up to date. Put it on Pages for a zero-server public dashboard |
+| Git as a time-series DB | CI appends benchmark or coverage history; git keeps the history, diffs and rollbacks |
 | Tracking tables in a repo | Endpoint inventories, test cases, checklists — reviewed in PRs |
 | Send out, fill in, collect | Recipients just open it in a browser — no Excel |
 | Offline / restricted sites | Runs on nothing but a browser; travels on a USB stick |
