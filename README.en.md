@@ -8,6 +8,10 @@ A self-saving spreadsheet in a single HTML file. The app and the data live in th
 
 **[▶ Open the demo](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** / **[⬇ Download](https://github.com/firemio/OneFileSheet/releases/latest)** — just open `OneFileSheet.html` in a browser.
 
+## Why
+
+Tables in xls or the cloud are awkward for AI agents to read and impossible to diff. So the app and its data became one JSON-carrying HTML file.
+
 ## Features
 
 - **Single file, ~24KB** — no server, no install, no `localStorage`. Data is JSON inside the HTML
@@ -17,6 +21,16 @@ A self-saving spreadsheet in a single HTML file. The app and the data live in th
 - **Fast with thousands of rows** — virtualized rendering, pinned headers
 - **43 themes + EN/JA UI** — saved inside the file, so it looks the same everywhere
 - **AI-agent friendly** — pretty-printed JSON, an editing contract (AGENT NOTES) ships in the file, external edits are detected at save time
+
+## Good fits
+
+| Use it for | Why it works |
+|---|---|
+| An AI agent's worksheet | Agents read/write the JSON directly; `git diff` shows every change |
+| Tracking tables in a repo | Endpoint inventories, test cases, checklists — reviewed in PRs |
+| Send out, fill in, collect | Recipients just open it in a browser — no Excel |
+| Offline / restricted sites | Runs on nothing but a browser; travels on a USB stick |
+| Household / expense notes | Quick stats show sums and averages at a glance |
 
 Not for: confidential data (plain text), formula-driven work, tens of thousands of rows.
 
