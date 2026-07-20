@@ -4,6 +4,12 @@ One File Sheet は、1つのHTMLファイルだけで動く簡易スプレッド
 
 サーバーやインストールは不要です。表データは `OneFileSheet.html` 内の JSON として保存され、ブラウザの `localStorage` は使いません。
 
+## デモ
+
+**[▶ ブラウザでデモを開く](https://firemio.github.io/OneFileSheet/OneFileSheet.html)**（GitHub Pages）
+
+デモはそのまま編集・貼り付け・アンドゥなどを試せます。編集内容をファイルに保存したい場合は、[OneFileSheet.html をダウンロード](https://raw.githubusercontent.com/firemio/OneFileSheet/main/OneFileSheet.html)（リンクを右クリック →「名前を付けてリンク先を保存」）し、Chrome / Edge で開いて「保存先を設定」でそのファイル自身を選んでください。
+
 ## なぜ作ったか
 
 ちょっとした表データが xls や Google スプレッドシートに入っていると、AI エージェントに中身を探させたり、編集内容の diff を取ったりするのが面倒です。
