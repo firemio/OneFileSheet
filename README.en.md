@@ -32,6 +32,7 @@ Tables in xls or the cloud are awkward for AI agents to read and impossible to d
 | Git as a time-series DB | CI appends benchmark or coverage history; git keeps the history, diffs and rollbacks |
 | Tracking tables in a repo | Endpoint inventories, test cases, checklists — reviewed in PRs |
 | Send out, fill in, collect | Recipients just open it in a browser — no Excel |
+| Handing a table to non-technical people | .md is raw text to them, CSV mangles encodings, Excel may not be installed — but anyone can open it as a table in a browser and make a small edit |
 | Offline / restricted sites | Runs on nothing but a browser; travels on a USB stick |
 | Household / expense notes | Quick stats show sums and averages at a glance |
 
