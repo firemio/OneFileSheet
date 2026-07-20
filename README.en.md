@@ -74,7 +74,7 @@ The editing contract for AI agents lives in the `AGENT NOTES` comment right abov
 
 ### Prompt for AI agents (copy & paste)
 
-When handing the file to an AI agent, attach this instruction as-is:
+The file ships with AGENT NOTES inside, so usually just handing it over is enough. If an agent gets confused by the file structure, or you want to set expectations before it reads the file, attach this instruction:
 
 ```text
 This OneFileSheet.html is a self-contained single-file spreadsheet. It is about
