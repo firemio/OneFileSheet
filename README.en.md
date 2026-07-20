@@ -32,7 +32,7 @@ Tables in xls or the cloud are awkward for AI agents to read and impossible to d
 | Git as a time-series DB | CI appends benchmark or coverage history; git keeps the history, diffs and rollbacks |
 | Tracking tables in a repo | Endpoint inventories, test cases, checklists — reviewed in PRs |
 | Send out, fill in, collect | Recipients just open it in a browser — no Excel |
-| When Markdown can't reach them | "A Markdown viewer? Never installed one." .md is gibberish, CSV mangles the encoding, Excel isn't there — but a browser is. Double-click, it's a table, one cell gets fixed, back it comes |
+| Handing a table to the office crew | Send a .md and you get "what is this?" A markdown viewer? An IDE? Not a chance. All they have is a browser. Double-click, it's a table, one cell gets fixed, back it comes |
 | Offline / restricted sites | Runs on nothing but a browser; travels on a USB stick |
 | Household / expense notes | Quick stats show sums and averages at a glance |
 
