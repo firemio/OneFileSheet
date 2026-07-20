@@ -137,8 +137,7 @@
     border: 2px solid;
     flex: none;
   }
-  #save-status { margin-left: 6px; color: var(--status); font-size: 13px; cursor: pointer; }
-  #save-status:hover { color: var(--accent); text-decoration: underline; }
+  #save-status { margin-left: 6px; color: var(--status); font-size: 13px; }
   #lang-btn { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; min-width: 34px; }
   #sheet-tabs .tab[contenteditable] { cursor: text; outline: 2px solid var(--accent); outline-offset: -2px; }
   #save-status.ok { color: var(--ok); }
@@ -461,7 +460,6 @@ const MESSAGES = {
     btnLang: "Language (saved in this file)",
     themePrefix: "Theme: ",
     titleEdit: "Click to edit the title",
-    statusChange: "Click to change the save target",
     noTarget: "No save target",
     target: "Save to: ",
     unsaved: " ●unsaved",
@@ -485,7 +483,6 @@ const MESSAGES = {
     toastSaved: "✓ Saved: ",
     toastLoaded: "Loaded: ",
     toastReloaded: "Reloaded: ",
-    toastTargetSet: "Save target set: ",
     toastCsv: "CSV exported: ",
     toastHtml: "HTML exported",
     lastRow: "Cannot delete the last row",
@@ -501,11 +498,12 @@ const MESSAGES = {
     help7: "Sheet tabs: click to switch, double-click to rename, right-click for menu",
     help8: "Paste ranges from Excel / Google Sheets",
     help9: "Download button: export HTML (app + all sheets) or CSV",
-    help10: "Click the save status to change the save target",
-    help11: "Pick a theme with the top-right button (32 themes + auto)",
-    help12: "Title, theme and all sheets are stored inside this single HTML file",
-    help13: "Drop an HTML file onto the page: open it / set it as the save target (keeps unsaved edits)",
-    dropHint: "Drop here: open the file / set it as the save target",
+    help10: "Pick a theme with the top-right button (32 themes + auto)",
+    help11: "Title, theme and all sheets are stored inside this single HTML file",
+    help12: "Drop an HTML file onto the page to open it (it becomes the save target)",
+    dropHint: "Drop here to open the file",
+    confirmDropDirty: "You have unsaved edits. Discard them and open the dropped file?",
+    confirmTargetDiffers: "The selected file's content differs from this sheet's source. Use it as the save target and overwrite it?",
     noFsApi: "This browser does not support the File System Access API. Please use Chrome or Edge. (Export HTML still works for saving your data.)",
     pickFail: "Failed to pick a file: ",
     noBlockInFile: "No sheet-data block found in the selected file.",
@@ -518,12 +516,12 @@ const MESSAGES = {
     noReadPerm: "No permission to read the file.",
     reloadFail: "Failed to reload: ",
     checkFileMoved: "\nCheck that the file was not moved or deleted.",
-    noWritePerm: "No permission to save. Click the save status to pick the file again.",
+    noWritePerm: "No permission to save. Try saving again and allow access.",
     saveNoBlock: "Save aborted: no sheet-data block found in the target file.",
     confirmNullBaseline: "The current data in the target file could not be read (its JSON may be broken). Overwrite the file with this table?",
     confirmConflict: "The data in the target file has changed since it was loaded (possibly edited by an AI agent). Overwrite?\nYou can cancel and use Reload to inspect the file's content.",
     saveFail1: "Failed to save: ",
-    saveFail2: "\nCheck that the file was not moved or deleted; if needed, click the save status to pick it again.",
+    saveFail2: "\nCheck that the file was not moved or deleted. If it moved, drop it onto the page to open it again.",
     loadFail: "Failed to read the file: ",
   },
   ja: {
@@ -538,7 +536,6 @@ const MESSAGES = {
     btnLang: "言語（ファイルに保存されます）",
     themePrefix: "テーマ: ",
     titleEdit: "クリックでタイトルを編集",
-    statusChange: "クリックで保存先を変更",
     noTarget: "保存先未設定",
     target: "保存先: ",
     unsaved: " ●未保存",
@@ -562,7 +559,6 @@ const MESSAGES = {
     toastSaved: "✓ 保存しました: ",
     toastLoaded: "読み込みました: ",
     toastReloaded: "再読み込みしました: ",
-    toastTargetSet: "保存先を設定しました: ",
     toastCsv: "CSVを書き出しました: ",
     toastHtml: "HTMLをエクスポートしました",
     lastRow: "最後の行は削除できません",
@@ -578,11 +574,12 @@ const MESSAGES = {
     help7: "シートタブ: クリックで切替、ダブルクリックで名前変更、右クリックでメニュー",
     help8: "Excel / Google スプレッドシートからの範囲貼り付けに対応",
     help9: "ダウンロードボタン: HTML（アプリ＋全シート）または CSV をエクスポート",
-    help10: "保存状態の表示をクリック: 保存先を変更",
-    help11: "右上のボタンでテーマを選択（32種類 + 自動）",
-    help12: "タイトル・テーマ・全シートは1つのHTMLファイル内に保存されます",
-    help13: "HTMLファイルをページにドロップ: 読み込み / 保存先の設定（未保存の編集があるときは保存先のみ）",
-    dropHint: "ここにドロップ: 読み込み / 保存先を設定",
+    help10: "右上のボタンでテーマを選択（32種類 + 自動）",
+    help11: "タイトル・テーマ・全シートは1つのHTMLファイル内に保存されます",
+    help12: "HTMLファイルをページにドロップすると開きます（そのファイルが保存先になります）",
+    dropHint: "ここにドロップして開く",
+    confirmDropDirty: "未保存の編集があります。破棄してドロップしたファイルを読み込みますか？",
+    confirmTargetDiffers: "選択したファイルの内容は、この表の読み込み元と異なります。このファイルを保存先にして上書きしますか？",
     noFsApi: "このブラウザはFile System Access APIに対応していません。ChromeかEdgeで開いてください。（HTMLエクスポートでの保存は可能です）",
     pickFail: "ファイル選択に失敗しました: ",
     noBlockInFile: "選択したファイルに sheet-data ブロックが見つかりません。",
@@ -595,12 +592,12 @@ const MESSAGES = {
     noReadPerm: "ファイルを読み込む権限がありません。",
     reloadFail: "再読み込みに失敗しました: ",
     checkFileMoved: "\nファイルが移動・削除されていないか確認してください。",
-    noWritePerm: "保存する権限がありません。保存先の表示をクリックしてファイルを選び直してください。",
+    noWritePerm: "保存する権限がありません。もう一度保存を実行して許可してください。",
     saveNoBlock: "保存先ファイルに sheet-data ブロックが見つからないため、保存を中止しました。",
     confirmNullBaseline: "保存先ファイルの現在のデータを読み込めていません（JSONが壊れている可能性があります）。ファイルのデータをこの表の内容で上書きしますか？",
     confirmConflict: "保存先ファイルのデータが読み込み後に変更されています（AIエージェント等による編集の可能性）。上書きしますか？\nキャンセル後に「再読み込み」でファイル側の内容を確認できます。",
     saveFail1: "保存に失敗しました: ",
-    saveFail2: "\nファイルが移動・削除されていないか確認し、必要なら保存先の表示をクリックして選び直してください。",
+    saveFail2: "\nファイルが移動・削除されていないか確認してください。移動した場合は、ファイルをページにドロップして開き直してください。",
     loadFail: "ファイルの読み込みに失敗しました: ",
   },
 };
@@ -917,7 +914,6 @@ function refreshStatus() {
   statusEl.classList.remove("ok", "warn");
   const base = fileHandle ? t("target") + fileHandle.name : t("noTarget");
   statusEl.textContent = base + (dirty ? t("unsaved") : "");
-  statusEl.title = t("statusChange");
   document.title = (dirty ? "● " : "") + doc.title;
 }
 
@@ -1424,7 +1420,7 @@ helpBtn.addEventListener("click", e => {
   heading.textContent = t("helpTitle");
   helpEl.appendChild(heading);
   const list = document.createElement("ul");
-  for (let i = 1; i <= 13; i++) {
+  for (let i = 1; i <= 12; i++) {
     const li = document.createElement("li");
     li.textContent = t("help" + i);
     list.appendChild(li);
@@ -1562,14 +1558,15 @@ window.addEventListener("drop", e => {
     try {
       const handle = await handlePromise;
       if (!handle || handle.kind !== "file" || !/\.html?$/i.test(handle.name)) return;
-      const loadData = !dirty;
-      if (!(await adoptHandle(handle, loadData))) return;
+      // ドロップの意味は「開く」の一義に固定。編集中は必ず破棄確認を挟む
+      if (dirty && !confirm(t("confirmDropDirty"))) return;
+      if (!(await adoptHandle(handle, true))) return;
       try {
         await saveStoredHandle(handle);
       } catch (error) {
         console.warn("failed to persist save target handle", error);
       }
-      showToast((loadData ? t("toastLoaded") : t("toastTargetSet")) + handle.name);
+      showToast(t("toastLoaded") + handle.name);
     } catch (error) {
       alert(t("loadFail") + error.message);
     }
@@ -1708,16 +1705,28 @@ async function pickFile() {
   }
 }
 
-// 初回保存時に呼ばれる: 現在の編集内容を保持したまま保存先だけを設定する
+// 初回保存時に呼ばれる: 現在の編集内容を保持したまま保存先を設定する。
+// 通常は自分自身を選ぶ想定のため、選んだファイルの中身が読み込み元と
+// 異なるとき（別ファイルを選んだ・外部で編集された）だけ確認を挟む
 async function pickSaveTarget() {
   const handle = await pickFile();
   if (!handle) return false;
 
+  const baseline = lastLoadedJson;
   try {
     if (!(await adoptHandle(handle, false))) return false;
   } catch (error) {
     alert(t("loadFail") + error.message);
     return false;
+  }
+
+  if (baseline !== null && lastLoadedJson !== baseline) {
+    if (!confirm(t("confirmTargetDiffers"))) {
+      fileHandle = null;
+      lastLoadedJson = baseline;
+      refreshStatus();
+      return false;
+    }
   }
 
   try {
@@ -1848,11 +1857,6 @@ document.getElementById("export-btn").addEventListener("click", e => {
     [t("exportHtmlItem"), exportHtml],
     [t("exportCsvItem"), exportCsv],
   ]);
-});
-
-statusEl.addEventListener("click", async () => {
-  if (!(await pickSaveTarget())) return;
-  showToast(t("toastTargetSet") + fileHandle.name);
 });
 
 langBtn.addEventListener("click", e => {
