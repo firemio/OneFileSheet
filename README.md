@@ -4,7 +4,7 @@
 
 日本語 | [English](README.en.md)
 
-![One File Sheet](screenshot.png)
+![One File Sheet デモ: 入力・クイック統計・Amberテーマ](demo.gif)
 
 **[▶ デモを開く](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** / **[⬇ ダウンロード](https://github.com/firemio/OneFileSheet/releases/latest)** — `OneFileSheet.html` をブラウザで開くだけ。
 

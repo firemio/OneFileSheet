@@ -4,7 +4,7 @@ A self-saving spreadsheet in a single HTML file. The app and the data live in th
 
 [日本語](README.md) | English
 
-![One File Sheet](screenshot.png)
+![One File Sheet demo: editing, quick stats, the Amber theme](demo.gif)
 
 **[▶ Open the demo](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** / **[⬇ Download](https://github.com/firemio/OneFileSheet/releases/latest)** — just open `OneFileSheet.html` in a browser.
 
