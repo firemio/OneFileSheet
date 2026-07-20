@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
 <title>OneFileSheet</title>
 <style>
   :root {
@@ -1281,6 +1282,8 @@ function applyLang() {
     el.setAttribute("aria-label", t(key));
   });
   langBtn.textContent = effLang().toUpperCase();
+  // ページ言語をUI言語に合わせ、ブラウザに翻訳を勧められないようにする
+  document.documentElement.lang = effLang();
   titleEl.title = t("titleEdit");
   applyTheme();
   refreshStatus();
