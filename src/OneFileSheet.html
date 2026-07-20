@@ -146,6 +146,11 @@
     flex: none;
   }
   #save-status { margin-left: 6px; color: var(--status); font-size: 13px; }
+  #save-status.hint {
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
   #lang-btn { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; min-width: 34px; }
   #sheet-tabs .tab[contenteditable] { cursor: text; outline: 2px solid var(--accent); outline-offset: -2px; }
   #save-status.ok { color: var(--ok); }
@@ -579,6 +584,7 @@ const MESSAGES = {
     themePrefix: "Theme: ",
     titleEdit: "Click to edit the title",
     noTarget: "No save target",
+    noTargetTip: "Two ways to enable saving:\n・ Drag & drop the currently open file here\n・ Pick the currently open file when saving (Ctrl+S)\nOnce allowed, the browser remembers it - next time it just saves.",
     target: "Save to: ",
     unsaved: " ●unsaved",
     colMenuTitle: "Click for column insert/delete menu",
@@ -664,6 +670,7 @@ const MESSAGES = {
     themePrefix: "テーマ: ",
     titleEdit: "クリックでタイトルを編集",
     noTarget: "保存先未設定",
+    noTargetTip: "保存を有効にする2つの方法:\n・今開いているファイルをここにD&D\n・保存(Ctrl+S)のときに今開いているファイルを指定\n一度許可すればブラウザが記憶し、次回からはそのまま保存できます。",
     target: "保存先: ",
     unsaved: " ●未保存",
     colMenuTitle: "クリックで列の挿入・削除",
@@ -1331,12 +1338,15 @@ function refreshStatus() {
   statusEl.classList.remove("ok", "warn");
   const base = FS_SUPPORTED ? (fileHandle ? t("target") + fileHandle.name : t("noTarget")) : "";
   statusEl.textContent = base + (dirty ? t("unsaved") : "");
+  // 保存先が未設定の間は、クリックで保存の仕組みのヒントを表示できる
+  // （ホバーのツールチップは編集の邪魔になるため出さない）
+  statusEl.classList.toggle("hint", FS_SUPPORTED && !fileHandle);
   document.title = (dirty ? "● " : "") + doc.title;
 }
 
 function showToast(message, isWarn) {
   if (toastTimer) clearTimeout(toastTimer);
-  statusEl.classList.remove("ok", "warn");
+  statusEl.classList.remove("ok", "warn", "hint");
   statusEl.classList.add(isWarn ? "warn" : "ok");
   statusEl.textContent = message;
   toastTimer = setTimeout(() => {
@@ -1996,6 +2006,26 @@ titleEl.addEventListener("focusout", () => {
 function hideHelp() {
   helpEl.hidden = true;
 }
+
+// 「保存先未設定」クリックで保存の仕組みのヒントを表示（ホバーできない
+// タッチ環境向け。ポップオーバーの器はヘルプと共用）
+statusEl.addEventListener("click", e => {
+  if (!statusEl.classList.contains("hint")) return;
+  e.stopPropagation();
+  hideMenu();
+  hideThemePop();
+  helpEl.innerHTML = "";
+  const heading = document.createElement("b");
+  heading.textContent = t("noTarget");
+  helpEl.appendChild(heading);
+  const body = document.createElement("div");
+  body.style.marginTop = "6px";
+  body.style.whiteSpace = "pre-line";
+  body.textContent = t("noTargetTip");
+  helpEl.appendChild(body);
+  const rect = statusEl.getBoundingClientRect();
+  placePopover(helpEl, rect.left, rect.bottom + 6);
+});
 
 function hideThemePop() {
   themePop.hidden = true;
