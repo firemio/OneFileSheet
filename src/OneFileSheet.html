@@ -20,6 +20,9 @@
     --btn-bg: #ffffff;
     --btn-border: #c8c8cd;
     --menu-shadow: rgba(0, 0, 0, 0.15);
+    /* スクロールバーもテーマ色に追従させる（CSS変数経由なのでJS側の
+       テーマ切替でそのまま更新される） */
+    scrollbar-color: color-mix(in srgb, var(--accent) 45%, var(--coord-bg)) var(--coord-bg);
   }
   /* テーマの実体は app-code の THEME_LIST から JS がCSS変数を導出して適用する。
      以下はJS実行前の初期描画用フォールバック */
@@ -41,9 +44,14 @@
       --menu-shadow: rgba(0, 0, 0, 0.5);
     }
   }
+  html, body { height: 100%; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-    margin: 16px 20px;
+    margin: 0;
+    padding: 10px 14px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
     background: var(--bg);
     color: var(--fg);
   }
@@ -144,13 +152,18 @@
   #save-status.warn { color: var(--warn); }
   .sheet-wrap {
     overflow: auto;
-    max-height: 72vh;
-    max-width: 100%;
-    width: fit-content;
+    /* 仮想スクロールがスペーサー高さを調整するため、ブラウザの
+       スクロールアンカリングと干渉しないよう無効化する */
+    overflow-anchor: none;
+    flex: 1 1 auto;
+    min-height: 0;
     border: 1px solid var(--border);
     border-radius: 6px;
   }
-  table { border-collapse: separate; border-spacing: 0; }
+  /* 列幅は JS が colgroup で与える。fixed にしないと1セルの編集で
+     表全体の再レイアウトが走り、大きなシートで固まる */
+  table { border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+  .v-pad td { padding: 0; border: none; height: 0; }
   td, th {
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -191,10 +204,10 @@
   .stat-btn:hover { color: var(--accent); }
   .stat-btn.active { color: var(--accent); }
   .stat-btn svg { display: inline-block; vertical-align: middle; }
-  th.stat-row-btn, th.stat-col { min-width: 24px; padding: 2px 6px; text-align: center; }
-  th.stat-row-btn { position: sticky; right: 0; z-index: 1; }
-  th.stat-col { position: sticky; bottom: 0; z-index: 2; }
-  th.col-head, th.row-head { position: relative; padding-right: 18px; }
+  th.stat-row-btn { min-width: 24px; padding: 2px 6px; text-align: center; position: sticky; right: 0; z-index: 1; }
+  /* position は上の sticky 指定を上書きしない（sticky でも .head-stat の
+     絶対配置の基準になるため relative は不要） */
+  th.col-head, th.row-head { padding-right: 18px; }
   .head-stat {
     position: absolute;
     right: 3px;
@@ -204,8 +217,6 @@
     color: var(--coord-fg);
   }
   th.corner-tr { position: sticky; top: 0; right: 0; z-index: 3; cursor: default; }
-  th.corner-bl { position: sticky; bottom: 0; left: 0; z-index: 3; cursor: default; }
-  th.corner-br { position: sticky; bottom: 0; right: 0; z-index: 3; cursor: default; }
   #sheet-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -481,6 +492,7 @@ AGENT NOTES — contract for AI/coding agents editing this file:
 "use strict";
 
 const table = document.getElementById("sheet");
+const wrapEl = document.querySelector(".sheet-wrap");
 const statusEl = document.getElementById("save-status");
 const menuEl = document.getElementById("ctx-menu");
 const titleEl = document.getElementById("doc-title");
@@ -609,7 +621,7 @@ const MESSAGES = {
     help3: "Alt+Enter: line break inside a cell",
     help4: "Ctrl+S: save (the first save asks you to pick this file itself; on unsupported browsers it downloads the HTML)",
     help5: "Ctrl+Z / Ctrl+Y: undo / redo",
-    help6: "Click a row number / column letter: insert & delete menu. Chart icons at both ends of each row/column: quick stats (hover to peek, click to pin)",
+    help6: "Click a row number / column letter: insert & delete menu. Chart icons on the headers and at row ends: quick stats (hover to peek, click to pin)",
     help7: "Sheet tabs: click to switch, double-click to rename, right-click for menu",
     help8: "Paste ranges from Excel / Google Sheets",
     help9: "Download button: export HTML (app + all sheets) or CSV",
@@ -694,7 +706,7 @@ const MESSAGES = {
     help3: "Alt+Enter: セル内改行",
     help4: "Ctrl+S: 上書き保存（初回はダイアログでこのファイル自身を選択。非対応ブラウザではHTMLダウンロードになります）",
     help5: "Ctrl+Z / Ctrl+Y: 元に戻す / やり直し",
-    help6: "行番号・列名をクリック: 行/列の挿入・削除メニュー。各行・各列の両端のグラフアイコン: クイック統計（ホバーで表示、クリックで固定）",
+    help6: "行番号・列名をクリック: 行/列の挿入・削除メニュー。ヘッダーと行末のグラフアイコン: クイック統計（ホバーで表示、クリックで固定）",
     help7: "シートタブ: クリックで切替、ダブルクリックで名前変更、右クリックでメニュー",
     help8: "Excel / Google スプレッドシートからの範囲貼り付けに対応",
     help9: "ダウンロードボタン: HTML（アプリ＋全シート）または CSV をエクスポート",
@@ -749,7 +761,6 @@ let lastLoadedJson = null;
 let undoStack = [];
 let redoStack = [];
 let activePos = null;
-let pendingSnapshot = null;
 let cellEdited = false;
 let toastTimer = null;
 let saving = false;
@@ -819,6 +830,243 @@ function normalizeDoc(parsed) {
 function syncData() {
   data = doc.sheets[doc.activeSheet].data;
 }
+
+// ---- 仮想スクロール ----
+// 大きなシートでも固まらないよう、DOMには可視範囲±OVERSCAN行だけを置く。
+// 行の実高さは描画時に計測して控え、スペーサー行で全体の高さを再現する
+const ROW_H = 29;
+const OVERSCAN = 12;
+const COL_MIN = 120;
+const COL_MAX = 360;
+let rowHeights = [];
+let rowEls = new Map();
+let vStart = 0;
+let vEnd = 0;
+let topSpacer = null;
+let botSpacer = null;
+let dataCols = [];
+let colWidths = [];
+
+const measureCtx = document.createElement("canvas").getContext("2d");
+
+function cellFont() {
+  return "14px " + getComputedStyle(document.body).fontFamily;
+}
+
+function textWidth(value) {
+  let w = 0;
+  const lines = value.includes("\n") ? value.split("\n") : [value];
+  for (const line of lines) {
+    const m = measureCtx.measureText(line).width;
+    if (m > w) w = m;
+  }
+  return w;
+}
+
+// 1行の実高と1行あたりの増分を、不可視のプローブ行を実レンダリングして測る。
+// CSSからの机上計算はフォント・ズーム・OSごとにズレるため、実測が唯一正確
+let probeRowH = ROW_H;
+let probeLineH = 19;
+
+function measureProbe() {
+  const probe = document.createElement("table");
+  probe.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;border-collapse:separate;border-spacing:0;table-layout:fixed;width:260px";
+  const makeRow = text => {
+    const tr = document.createElement("tr");
+    const head = document.createElement("th");
+    head.className = "coord row-head";
+    head.textContent = "888";
+    tr.appendChild(head);
+    const td = document.createElement("td");
+    td.className = "cell";
+    td.textContent = text;
+    tr.appendChild(td);
+    const stat = document.createElement("th");
+    stat.className = "coord stat-btn stat-row-btn";
+    stat.innerHTML = STAT_ICON;
+    tr.appendChild(stat);
+    return tr;
+  };
+  const one = makeRow("x");
+  const three = makeRow("x\nx\nx");
+  probe.appendChild(one);
+  probe.appendChild(three);
+  probe.appendChild(makeRow("x")); // 最終行は border-bottom が消えるルールの受け皿
+  document.body.appendChild(probe);
+  const h1 = one.getBoundingClientRect().height;
+  const h3 = three.getBoundingClientRect().height;
+  probe.remove();
+  if (h1 > 0) probeRowH = h1;
+  if (h3 > h1) probeLineH = (h3 - h1) / 2;
+}
+
+// 列幅と行高の見積もりを全データから一度に算出する（canvas計測なので
+// DOMより桁違いに速い）。列幅はスクロールで揺れないようデータ全体を測る。
+// 行高は「スクロールバーの長さ・位置」を全行描画なしで実際と一致させる
+// ための見積もりで、改行や折り返しを含む行だけ2パス目で行数を数える
+function computeLayout() {
+  measureProbe();
+  const family = getComputedStyle(document.body).fontFamily;
+  const widths = new Array(colCount()).fill(0);
+  const complexRows = [];
+  const scanRow = r => {
+    const row = data[r];
+    let complex = false;
+    for (let c = 0; c < row.length; c++) {
+      const v = row[c];
+      if (!v) continue;
+      const w = textWidth(v);
+      if (w > widths[c]) widths[c] = w;
+      if (w > COL_MAX - 20 || v.includes("\n")) complex = true;
+    }
+    if (complex) complexRows.push(r);
+  };
+  measureCtx.font = "600 14px " + family;
+  scanRow(0);
+  measureCtx.font = "14px " + family;
+  for (let r = 1; r < data.length; r++) scanRow(r);
+  const colW = widths.map(w => Math.min(COL_MAX, Math.max(COL_MIN, Math.ceil(w) + 20)));
+
+  const heights = new Array(data.length).fill(probeRowH);
+  for (const r of complexRows) {
+    measureCtx.font = (r === 0 ? "600 14px " : "14px ") + family;
+    const row = data[r];
+    let lines = 1;
+    for (let c = 0; c < row.length; c++) {
+      const v = row[c];
+      if (!v) continue;
+      const avail = Math.max(24, colW[c] - 14);
+      let n = 0;
+      for (const line of v.split("\n")) {
+        n += Math.max(1, Math.ceil(measureCtx.measureText(line).width / avail));
+      }
+      if (n > lines) lines = n;
+    }
+    heights[r] = probeRowH + (lines - 1) * probeLineH;
+  }
+  return { colW: colW, heights: heights };
+}
+
+function rowHeadWidth() {
+  return String(data.length).length * 8 + 30;
+}
+
+function rowTop(r) {
+  let y = 0;
+  for (let i = 0; i < r; i++) y += rowHeights[i];
+  return y;
+}
+
+function spacerRow() {
+  const tr = document.createElement("tr");
+  tr.className = "v-pad";
+  const td = document.createElement("td");
+  td.colSpan = colCount() + 2;
+  tr.appendChild(td);
+  return tr;
+}
+
+function buildRow(r) {
+  const row = data[r];
+  const tr = document.createElement("tr");
+
+  const rowHead = document.createElement("th");
+  rowHead.className = "coord row-head";
+  rowHead.dataset.r = r;
+  rowHead.textContent = r + 1;
+  rowHead.title = t("rowMenuTitle");
+  rowHead.appendChild(makeHeadStatIcon("row", r));
+  tr.appendChild(rowHead);
+
+  row.forEach((cell, c) => {
+    const el = document.createElement(r === 0 ? "th" : "td");
+    el.className = "cell";
+    el.setAttribute("contenteditable", editMode);
+    el.dataset.r = r;
+    el.dataset.c = c;
+    el.textContent = cell;
+    tr.appendChild(el);
+  });
+
+  const rowStat = document.createElement("th");
+  rowStat.className = "coord stat-btn stat-row-btn";
+  rowStat.dataset.r = r;
+  rowStat.innerHTML = STAT_ICON;
+  tr.appendChild(rowStat);
+
+  return tr;
+}
+
+// 可視範囲の行だけをDOMに反映する。既存の行要素は再利用するので、
+// 編集中のセルは小さなスクロールではフォーカスを失わない
+function updateWindow(force) {
+  if (!topSpacer) return;
+  const total = data.length;
+  const viewTop = wrapEl.scrollTop;
+  const viewBottom = viewTop + wrapEl.clientHeight;
+
+  let y = 0;
+  let start = total;
+  for (let i = 0; i < total; i++) {
+    y += rowHeights[i];
+    if (y > viewTop) { start = i; break; }
+  }
+  let end = start;
+  y = rowTop(start);
+  for (let i = start; i < total; i++) {
+    if (y > viewBottom) break;
+    y += rowHeights[i];
+    end = i + 1;
+  }
+  start = Math.max(0, start - OVERSCAN);
+  end = Math.min(total, end + OVERSCAN);
+
+  if (!force && start === vStart && end === vEnd) return;
+
+  for (const [r, el] of [...rowEls]) {
+    if (r < start || r >= end) {
+      el.remove();
+      rowEls.delete(r);
+    }
+  }
+  let anchor = botSpacer;
+  for (let r = end - 1; r >= start; r--) {
+    let el = rowEls.get(r);
+    if (!el) {
+      el = buildRow(r);
+      table.insertBefore(el, anchor);
+      rowEls.set(r, el);
+    }
+    anchor = el;
+  }
+  vStart = start;
+  vEnd = end;
+
+  // 描画した行の実高さを控えて、スペーサーの精度を上げる。
+  // offsetHeight は整数丸めで誤差が積もるため小数の rect を使う
+  for (const [r, el] of rowEls) {
+    const h = el.getBoundingClientRect().height;
+    if (h) rowHeights[r] = h;
+  }
+  topSpacer.firstChild.style.height = rowTop(start) + "px";
+  botSpacer.firstChild.style.height = Math.max(0, rowTop(total) - rowTop(end)) + "px";
+
+  refreshStatIcons();
+}
+
+let windowScheduled = false;
+
+function scheduleWindow() {
+  if (windowScheduled) return;
+  windowScheduled = true;
+  requestAnimationFrame(() => {
+    windowScheduled = false;
+    updateWindow(false);
+  });
+}
+
+wrapEl.addEventListener("scroll", scheduleWindow);
+window.addEventListener("resize", scheduleWindow);
 
 function colCount() {
   return data[0] ? data[0].length : 0;
@@ -945,7 +1193,30 @@ function renderTabs() {
 
 function render() {
   const hadFocus = table.contains(document.activeElement);
+  const scrollTop = wrapEl.scrollTop;
+  const scrollLeft = wrapEl.scrollLeft;
+  const layout = computeLayout();
+  colWidths = layout.colW;
+  rowHeights = layout.heights;
   table.innerHTML = "";
+  rowEls.clear();
+
+  // table-layout: fixed 用の列幅。表自体の幅も明示しないと fixed が効かない
+  const colgroup = document.createElement("colgroup");
+  const headCol = document.createElement("col");
+  headCol.style.width = rowHeadWidth() + "px";
+  colgroup.appendChild(headCol);
+  dataCols = colWidths.map(w => {
+    const col = document.createElement("col");
+    col.style.width = w + "px";
+    colgroup.appendChild(col);
+    return col;
+  });
+  const statCol = document.createElement("col");
+  statCol.style.width = "30px";
+  colgroup.appendChild(statCol);
+  table.appendChild(colgroup);
+  table.style.width = rowHeadWidth() + colWidths.reduce((a, b) => a + b, 0) + 30 + "px";
 
   const coordRow = document.createElement("tr");
   const corner = document.createElement("th");
@@ -965,53 +1236,19 @@ function render() {
   coordRow.appendChild(cornerTr);
   table.appendChild(coordRow);
 
-  data.forEach((row, r) => {
-    const tr = document.createElement("tr");
+  topSpacer = spacerRow();
+  botSpacer = spacerRow();
+  table.appendChild(topSpacer);
+  table.appendChild(botSpacer);
 
-    const rowHead = document.createElement("th");
-    rowHead.className = "coord row-head";
-    rowHead.dataset.r = r;
-    rowHead.textContent = r + 1;
-    rowHead.title = t("rowMenuTitle");
-    rowHead.appendChild(makeHeadStatIcon("row", r));
-    tr.appendChild(rowHead);
-
-    row.forEach((cell, c) => {
-      const el = document.createElement(r === 0 ? "th" : "td");
-      el.className = "cell";
-      el.setAttribute("contenteditable", editMode);
-      el.dataset.r = r;
-      el.dataset.c = c;
-      el.textContent = cell;
-      tr.appendChild(el);
-    });
-
-    const rowStat = document.createElement("th");
-    rowStat.className = "coord stat-btn stat-row-btn";
-    rowStat.dataset.r = r;
-    rowStat.innerHTML = STAT_ICON;
-    tr.appendChild(rowStat);
-
-    table.appendChild(tr);
-  });
-
-  const footRow = document.createElement("tr");
-  const cornerBl = document.createElement("th");
-  cornerBl.className = "coord corner-bl";
-  footRow.appendChild(cornerBl);
-  for (let c = 0; c < colCount(); c++) {
-    const th = document.createElement("th");
-    th.className = "coord stat-btn stat-col";
-    th.dataset.c = c;
-    th.innerHTML = STAT_ICON;
-    footRow.appendChild(th);
-  }
-  const cornerBr = document.createElement("th");
-  cornerBr.className = "coord corner-br";
-  footRow.appendChild(cornerBr);
-  table.appendChild(footRow);
-
-  refreshStatIcons();
+  // スペーサーで全高を先に確保してからスクロール位置を戻す。
+  // 高さ0のままだと scrollTop の復元がクランプされて先頭に飛ぶ
+  botSpacer.firstChild.style.height = rowTop(data.length) + "px";
+  wrapEl.scrollTop = scrollTop;
+  wrapEl.scrollLeft = scrollLeft;
+  vStart = 0;
+  vEnd = 0;
+  updateWindow(true);
   refreshPinnedStats();
 
   if (hadFocus && activePos) {
@@ -1064,8 +1301,14 @@ function cellAt(r, c) {
 function focusCell(r, c, caret) {
   r = Math.min(Math.max(r, 0), data.length - 1);
   c = Math.min(Math.max(c, 0), colCount() - 1);
-  const el = cellAt(r, c);
-  if (!el) return;
+  let el = cellAt(r, c);
+  if (!el) {
+    // 仮想スクロールで未描画の行は、スクロールして描画してからフォーカスする
+    wrapEl.scrollTop = Math.max(0, rowTop(r) - wrapEl.clientHeight / 2);
+    updateWindow(true);
+    el = cellAt(r, c);
+    if (!el) return;
+  }
   el.focus();
   const range = document.createRange();
   range.selectNodeContents(el);
@@ -1350,9 +1593,11 @@ function refreshPinnedStats() {
     hideStats();
     return;
   }
-  const selector = pinnedStat.side === "head"
-    ? (kind === "col" ? '.col-head[data-c="' + index + '"] .head-stat' : '.row-head[data-r="' + index + '"] .head-stat')
-    : (kind === "col" ? '.stat-col[data-c="' + index + '"]' : '.stat-row-btn[data-r="' + index + '"]');
+  const selector = kind === "col"
+    ? '.col-head[data-c="' + index + '"] .head-stat'
+    : (pinnedStat.side === "head"
+        ? '.row-head[data-r="' + index + '"] .head-stat'
+        : '.stat-row-btn[data-r="' + index + '"]');
   const btn = table.querySelector(selector);
   if (!btn) {
     hideStats();
@@ -1516,24 +1761,45 @@ table.addEventListener("focusin", e => {
   const cell = e.target.closest(".cell");
   if (!cell) return;
   activePos = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
-  pendingSnapshot = JSON.stringify(doc);
   cellEdited = false;
 });
 
 table.addEventListener("input", e => {
   const cell = e.target.closest(".cell");
   if (!cell) return;
-  if (!cellEdited && pendingSnapshot !== null) {
-    pushUndoSnapshot(pendingSnapshot);
+  if (!cellEdited) {
+    // data への書き込み前なので doc はまだ編集前の状態。フォーカス移動の
+    // たびに全シートを stringify しないよう、最初の入力まで遅延する
+    pushUndo();
     cellEdited = true;
   }
   // 末尾の "\n" は contentEditable が表示用に足すプレースホルダ改行のため1つ除去
   let value = cell.textContent;
   if (value.endsWith("\n")) value = value.slice(0, -1);
   data[Number(cell.dataset.r)][Number(cell.dataset.c)] = value;
+  autoGrowCol(Number(cell.dataset.c), value);
+  // セル内改行などで行高が変わってもスペーサー計算がズレないよう控え直す
+  const tr = cell.parentElement;
+  if (tr) {
+    const h = tr.getBoundingClientRect().height;
+    if (h) rowHeights[Number(cell.dataset.r)] = h;
+  }
   markDirty();
   refreshPinnedStats();
 });
+
+// 入力中は列幅を広げる方向だけ即時反映する（縮む方向は次の render() に任せる）
+function autoGrowCol(c, value) {
+  const col = dataCols[c];
+  if (!col || colWidths[c] >= COL_MAX) return;
+  measureCtx.font = cellFont();
+  const needed = Math.min(COL_MAX, Math.max(COL_MIN, Math.ceil(textWidth(value)) + 20));
+  if (needed > colWidths[c]) {
+    colWidths[c] = needed;
+    col.style.width = needed + "px";
+    table.style.width = rowHeadWidth() + colWidths.reduce((a, b) => a + b, 0) + 30 + "px";
+  }
+}
 
 table.addEventListener("keydown", e => {
   if (e.isComposing) return;
@@ -1698,19 +1964,17 @@ tabsEl.addEventListener("contextmenu", e => {
   ]);
 });
 
-let titlePending = null;
 let titleEdited = false;
 
 titleEl.setAttribute("contenteditable", editMode);
 
 titleEl.addEventListener("focusin", () => {
-  titlePending = JSON.stringify(doc);
   titleEdited = false;
 });
 
 titleEl.addEventListener("input", () => {
-  if (!titleEdited && titlePending !== null) {
-    pushUndoSnapshot(titlePending);
+  if (!titleEdited) {
+    pushUndo();
     titleEdited = true;
   }
   doc.title = titleEl.textContent.replace(/\n/g, " ").trim() || "OneFileSheet";

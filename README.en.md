@@ -18,12 +18,13 @@ One File Sheet packs a spreadsheet app and its data into one HTML file. Because 
 
 ## Features
 
-- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML. The distributed file is self-extracting and about 31KB
+- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML. The distributed file is self-extracting and about 35KB
 - **Self-saving** — on Chrome / Edge it writes back into its own file (File System Access API). The first save just asks you to pick the file (starting from your last folder). You can also open a file by dropping it onto the page
 - **Works on unsupported browsers too** — on mobile browsers, Firefox and Safari, "Save" automatically falls back to downloading the HTML
 - **Multiple sheets** — switch by tabs; add, rename (double-click), reorder, delete
 - **Spreadsheet-grade editing** — Enter / Tab / arrow-key navigation, range paste from Excel / Google Sheets (multiline cells supported), row/column insert & delete, Ctrl+Z / Ctrl+Y, Ctrl+S, Alt+Enter for in-cell line breaks
-- **Quick stats** — hover the chart icons at both ends of every row and column for count / sum / average / max / min. Click to pin; pinned stats follow your edits live. Read-only — nothing is written to cells
+- **Quick stats** — hover the chart icons on the headers and at row ends for count / sum / average / max / min. Click to pin; pinned stats follow your edits live. Read-only — nothing is written to cells
+- **Fast on large sheets** — virtualized rendering draws only the visible rows, so typing and resizing stay smooth with thousands of rows. Row and column headers stay pinned while scrolling
 - **Export** — HTML (a replica of the app with all sheets) and CSV (UTF-8 with BOM, Excel-safe)
 - **43 themes + auto** (including glowing Neon / Cyberpunk / Synthwave and eight vivid Pop colors) / **English & Japanese UI** (defaults to your browser language) — both saved inside the file, so it looks the same wherever you share it
 - **AI-agent friendly** — data is pretty-printed JSON, an editing contract (AGENT NOTES) ships inside the file, and external edits are detected at save time
@@ -78,7 +79,7 @@ The file ships with AGENT NOTES inside, so usually just handing it over is enoug
 
 ```text
 This OneFileSheet.html is a self-contained single-file spreadsheet. It is about
-31KB, but most of it is the compressed app runtime (base64) - ignore that part.
+35KB, but most of it is the compressed app runtime (base64) - ignore that part.
 The actual data is ONLY the JSON inside the
 <script id="sheet-data" type="application/json"> block.
 
