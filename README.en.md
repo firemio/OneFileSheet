@@ -18,7 +18,7 @@ One File Sheet packs a spreadsheet app and its data into one HTML file. Because 
 
 ## Features
 
-- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML
+- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML. The distributed file is self-extracting and about 31KB
 - **Self-saving** — on Chrome / Edge it writes back into its own file (File System Access API). The first save just asks you to pick the file (starting from your last folder). You can also open a file by dropping it onto the page
 - **Works on unsupported browsers too** — on mobile browsers, Firefox and Safari, "Save" automatically falls back to downloading the HTML
 - **Multiple sheets** — switch by tabs; add, rename (double-click), reorder, delete
@@ -76,6 +76,10 @@ The editing contract for AI agents lives in the `AGENT NOTES` comment right abov
 
 - In-place saving uses the File System Access API (Chrome / Edge). By browser design, you must pick the file and grant permission on the first save.
 - Data is stored as plain text. Do not use it for passwords or other secrets.
+
+## Development
+
+The readable source lives at [src/OneFileSheet.html](src/OneFileSheet.html). Running `node build.js` (no dependencies, no network) produces the distributed `OneFileSheet.html`: a self-extracting file whose CSS, markup and app JS are deflate-compressed and unpacked at startup via the browser's built-in DecompressionStream. The sheet-data JSON and AGENT NOTES stay as plain text after packing, so AI agents can read and write the data in either file just the same.
 
 ## License
 
