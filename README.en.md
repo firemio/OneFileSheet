@@ -18,7 +18,7 @@ One File Sheet packs a spreadsheet app and its data into one HTML file. Because 
 
 ## Features
 
-- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML. The distributed file is self-extracting and about 35KB
+- **Single file** — no server, no install, no `localStorage`. Data is JSON inside the HTML. The distributed file is self-extracting and about 24KB
 - **Self-saving** — on Chrome / Edge it writes back into its own file (File System Access API). The first save just asks you to pick the file (starting from your last folder). You can also open a file by dropping it onto the page
 - **Works on unsupported browsers too** — on mobile browsers, Firefox and Safari, "Save" automatically falls back to downloading the HTML
 - **Multiple sheets** — switch by tabs; add, rename (double-click), reorder, delete
@@ -79,7 +79,7 @@ The file ships with AGENT NOTES inside, so usually just handing it over is enoug
 
 ```text
 This OneFileSheet.html is a self-contained single-file spreadsheet. It is about
-35KB, but most of it is the compressed app runtime (base64) - ignore that part.
+24KB, but most of it is the compressed app runtime - ignore that part.
 The actual data is ONLY the JSON inside the
 <script id="sheet-data" type="application/json"> block.
 
@@ -97,7 +97,7 @@ Format: { "title", "theme", "lang", "activeSheet", "sheets": [ { "name", "data" 
 
 ## Development
 
-The readable source lives at [src/OneFileSheet.html](src/OneFileSheet.html). Running `node build.js` (no dependencies, no network) produces the distributed `OneFileSheet.html`: a self-extracting file whose CSS, markup and app JS are deflate-compressed and unpacked at startup via the browser's built-in DecompressionStream. The sheet-data JSON and AGENT NOTES stay as plain text after packing, so AI agents can read and write the data in either file just the same.
+The readable source lives at [src/OneFileSheet.html](src/OneFileSheet.html). Run `npm install` once (build-only devDependencies: terser / csso — the app itself keeps zero runtime dependencies), then `node build.js` produces the distributed `OneFileSheet.html`: a self-extracting file whose CSS and app JS are minified, deflate-compressed, embedded as base125 and unpacked at startup via the browser's built-in DecompressionStream. The sheet-data JSON and AGENT NOTES stay as plain text after packing, so AI agents can read and write the data in either file just the same.
 
 ## License
 
