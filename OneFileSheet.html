@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>One File Sheet</title>
+<title>OneFileSheet</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -187,6 +187,25 @@
   th.row-head, th.corner { position: sticky; left: 0; }
   th.corner { z-index: 3; cursor: default; }
   th.row-head { z-index: 1; }
+  .stat-btn { cursor: pointer; }
+  .stat-btn:hover { color: var(--accent); }
+  .stat-btn.active { color: var(--accent); }
+  .stat-btn svg { display: inline-block; vertical-align: middle; }
+  th.stat-row-btn, th.stat-col { min-width: 24px; padding: 2px 6px; text-align: center; }
+  th.stat-row-btn { position: sticky; right: 0; z-index: 1; }
+  th.stat-col { position: sticky; bottom: 0; z-index: 2; }
+  th.col-head, th.row-head { position: relative; padding-right: 18px; }
+  .head-stat {
+    position: absolute;
+    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    color: var(--coord-fg);
+  }
+  th.corner-tr { position: sticky; top: 0; right: 0; z-index: 3; cursor: default; }
+  th.corner-bl { position: sticky; bottom: 0; left: 0; z-index: 3; cursor: default; }
+  th.corner-br { position: sticky; bottom: 0; right: 0; z-index: 3; cursor: default; }
   #sheet-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -242,6 +261,21 @@
     color: var(--fg);
   }
   #ctx-menu button:hover { background: var(--hover); color: var(--accent); }
+  #stats-pop {
+    position: fixed;
+    z-index: 10;
+    min-width: 190px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--menu-shadow);
+    font-size: 13px;
+  }
+  #stats-pop[hidden] { display: none; }
+  #stats-pop b { display: block; margin-bottom: 6px; }
+  #stats-pop .stat-row { display: flex; justify-content: space-between; gap: 16px; margin: 3px 0; }
+  #stats-pop .stat-row span:first-child { color: var(--status); }
   #drop-overlay {
     position: fixed;
     inset: 0;
@@ -267,7 +301,7 @@
 <body>
 
 <div class="topbar">
-  <h2 id="doc-title" title="クリックでタイトルを編集">One File Sheet</h2>
+  <h2 id="doc-title" title="クリックでタイトルを編集">OneFileSheet</h2>
   <button id="save-btn" onclick="saveToSameFile()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
   </button>
@@ -307,6 +341,8 @@
 <div id="help-pop" hidden></div>
 
 <div id="theme-pop" hidden></div>
+
+<div id="stats-pop" hidden></div>
 
 <div id="drop-overlay" hidden><div class="drop-box"></div></div>
 
@@ -355,7 +391,7 @@ AGENT NOTES — contract for AI/coding agents editing this file:
 
 <script id="sheet-data" type="application/json">
 {
-  "title": "One File Sheet",
+  "title": "OneFileSheet",
   "theme": "auto",
   "lang": "auto",
   "activeSheet": 0,
@@ -364,19 +400,52 @@ AGENT NOTES — contract for AI/coding agents editing this file:
       "name": "Sheet1",
       "data": [
         [
-          "Name",
+          "Item",
+          "Category",
           "Amount",
           "Memo"
         ],
         [
-          "Alice",
-          "aaa",
-          "test"
+          "Coffee beans",
+          "Food",
+          "1,280",
+          ""
         ],
         [
-          "Bob",
-          "200",
+          "Notebook",
+          "Office",
+          "350",
           ""
+        ],
+        [
+          "JavaScript guide",
+          "Study",
+          "3,200",
+          "tech book"
+        ],
+        [
+          "Lunch",
+          "Food",
+          "850",
+          ""
+        ],
+        [
+          "USB-C cable",
+          "Gadgets",
+          "1,499",
+          ""
+        ],
+        [
+          "Train fare",
+          "Transport",
+          "420",
+          "IC card"
+        ],
+        [
+          "Sticker",
+          "Other",
+          "free",
+          "promo"
         ]
       ]
     }
@@ -396,6 +465,7 @@ const tabsEl = document.getElementById("sheet-tabs");
 const helpBtn = document.getElementById("help-btn");
 const helpEl = document.getElementById("help-pop");
 const langBtn = document.getElementById("lang-btn");
+const statsPop = document.getElementById("stats-pop");
 const themeBtn = document.getElementById("theme-btn");
 const themePop = document.getElementById("theme-pop");
 const themeIconSun = document.getElementById("theme-icon-sun");
@@ -473,6 +543,15 @@ const MESSAGES = {
     insColLeft: "Insert column left",
     insColRight: "Insert column right",
     delCol: "Delete column",
+    statsMenu: "Show stats",
+    statsRow: "Row ",
+    statsCount: "Count",
+    statsExcluded: "Excluded (non-numeric)",
+    statsSum: "Sum",
+    statsAvg: "Average",
+    statsMax: "Max",
+    statsMin: "Min",
+    statsNoNumbers: "No numeric cells",
     sheetRename: "Rename",
     sheetLeft: "Move left",
     sheetRight: "Move right",
@@ -494,7 +573,7 @@ const MESSAGES = {
     help3: "Alt+Enter: line break inside a cell",
     help4: "Ctrl+S: save (the first save asks you to pick this file itself)",
     help5: "Ctrl+Z / Ctrl+Y: undo / redo",
-    help6: "Click a row number / column letter: insert & delete menu",
+    help6: "Click a row number / column letter: insert & delete menu. Chart icons at both ends of each row/column: quick stats (hover to peek, click to pin)",
     help7: "Sheet tabs: click to switch, double-click to rename, right-click for menu",
     help8: "Paste ranges from Excel / Google Sheets",
     help9: "Download button: export HTML (app + all sheets) or CSV",
@@ -549,6 +628,15 @@ const MESSAGES = {
     insColLeft: "左に列を挿入",
     insColRight: "右に列を挿入",
     delCol: "列を削除",
+    statsMenu: "集計を表示",
+    statsRow: "行 ",
+    statsCount: "件数",
+    statsExcluded: "除外（数値以外）",
+    statsSum: "合計",
+    statsAvg: "平均",
+    statsMax: "最大",
+    statsMin: "最小",
+    statsNoNumbers: "数値セルがありません",
     sheetRename: "名前を変更",
     sheetLeft: "左へ移動",
     sheetRight: "右へ移動",
@@ -570,7 +658,7 @@ const MESSAGES = {
     help3: "Alt+Enter: セル内改行",
     help4: "Ctrl+S: 上書き保存（初回はダイアログでこのファイル自身を選択）",
     help5: "Ctrl+Z / Ctrl+Y: 元に戻す / やり直し",
-    help6: "行番号・列名をクリック: 行/列の挿入・削除メニュー",
+    help6: "行番号・列名をクリック: 行/列の挿入・削除メニュー。各行・各列の両端のグラフアイコン: クイック統計（ホバーで表示、クリックで固定）",
     help7: "シートタブ: クリックで切替、ダブルクリックで名前変更、右クリックでメニュー",
     help8: "Excel / Google スプレッドシートからの範囲貼り付けに対応",
     help9: "ダウンロードボタン: HTML（アプリ＋全シート）または CSV をエクスポート",
@@ -629,6 +717,7 @@ let pendingSnapshot = null;
 let cellEdited = false;
 let toastTimer = null;
 let saving = false;
+let pinnedStat = null;
 
 let editMode = "plaintext-only";
 try {
@@ -658,7 +747,7 @@ function normalizeData(value) {
 }
 
 function normalizeDoc(parsed) {
-  let title = "One File Sheet";
+  let title = "OneFileSheet";
   let theme = "auto";
   let lang = "auto";
   let activeSheet = 0;
@@ -693,6 +782,18 @@ function syncData() {
 
 function colCount() {
   return data[0] ? data[0].length : 0;
+}
+
+const STAT_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="11"/></svg>';
+
+function makeHeadStatIcon(kind, index) {
+  const s = document.createElement("span");
+  s.className = "stat-btn head-stat";
+  if (kind === "col") s.dataset.c = index;
+  else s.dataset.r = index;
+  s.innerHTML = STAT_ICON;
+  s.title = t("statsMenu");
+  return s;
 }
 
 function colLetter(c) {
@@ -813,8 +914,12 @@ function render() {
     th.dataset.c = c;
     th.textContent = colLetter(c);
     th.title = t("colMenuTitle");
+    th.appendChild(makeHeadStatIcon("col", c));
     coordRow.appendChild(th);
   }
+  const cornerTr = document.createElement("th");
+  cornerTr.className = "coord corner-tr";
+  coordRow.appendChild(cornerTr);
   table.appendChild(coordRow);
 
   data.forEach((row, r) => {
@@ -825,6 +930,7 @@ function render() {
     rowHead.dataset.r = r;
     rowHead.textContent = r + 1;
     rowHead.title = t("rowMenuTitle");
+    rowHead.appendChild(makeHeadStatIcon("row", r));
     tr.appendChild(rowHead);
 
     row.forEach((cell, c) => {
@@ -837,8 +943,35 @@ function render() {
       tr.appendChild(el);
     });
 
+    const rowStat = document.createElement("th");
+    rowStat.className = "coord stat-btn stat-row-btn";
+    rowStat.dataset.r = r;
+    rowStat.innerHTML = STAT_ICON;
+    rowStat.title = t("statsMenu");
+    tr.appendChild(rowStat);
+
     table.appendChild(tr);
   });
+
+  const footRow = document.createElement("tr");
+  const cornerBl = document.createElement("th");
+  cornerBl.className = "coord corner-bl";
+  footRow.appendChild(cornerBl);
+  for (let c = 0; c < colCount(); c++) {
+    const th = document.createElement("th");
+    th.className = "coord stat-btn stat-col";
+    th.dataset.c = c;
+    th.innerHTML = STAT_ICON;
+    th.title = t("statsMenu");
+    footRow.appendChild(th);
+  }
+  const cornerBr = document.createElement("th");
+  cornerBr.className = "coord corner-br";
+  footRow.appendChild(cornerBr);
+  table.appendChild(footRow);
+
+  refreshStatIcons();
+  refreshPinnedStats();
 
   if (hadFocus && activePos) {
     focusCell(activePos.r, activePos.c, "end");
@@ -1106,12 +1239,14 @@ function moveSheet(i, dir) {
 }
 
 function showMenu(x, y, items) {
+  if (!pinnedStat) hideStats();
   menuEl.innerHTML = "";
   items.forEach(([label, action]) => {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = label;
-    b.onclick = () => {
+    b.onclick = e => {
+      e.stopPropagation();
       hideMenu();
       action();
     };
@@ -1127,7 +1262,122 @@ function hideMenu() {
   menuEl.hidden = true;
 }
 
+function hideStats() {
+  statsPop.hidden = true;
+  pinnedStat = null;
+  refreshStatIcons();
+}
+
+function refreshStatIcons() {
+  table.querySelectorAll(".stat-btn").forEach(btn => {
+    const isCol = btn.dataset.c !== undefined;
+    const active = !!pinnedStat &&
+      ((isCol && pinnedStat.kind === "col" && Number(btn.dataset.c) === pinnedStat.index) ||
+       (!isCol && pinnedStat.kind === "row" && Number(btn.dataset.r) === pinnedStat.index));
+    btn.classList.toggle("active", active);
+  });
+}
+
+function showStatsForBtn(btn) {
+  const rect = btn.getBoundingClientRect();
+  if (btn.dataset.c !== undefined) {
+    showColStats(Number(btn.dataset.c), rect.left, rect.bottom + 6);
+  } else {
+    showRowStats(Number(btn.dataset.r), rect.right + 6, rect.top);
+  }
+}
+
+// 固定中の集計を最新データ・最新レイアウトに追従させる
+function refreshPinnedStats() {
+  if (!pinnedStat) return;
+  const { kind, index } = pinnedStat;
+  if (kind === "col" ? index >= colCount() : index >= data.length) {
+    hideStats();
+    return;
+  }
+  const selector = pinnedStat.side === "head"
+    ? (kind === "col" ? '.col-head[data-c="' + index + '"] .head-stat' : '.row-head[data-r="' + index + '"] .head-stat')
+    : (kind === "col" ? '.stat-col[data-c="' + index + '"]' : '.stat-row-btn[data-r="' + index + '"]');
+  const btn = table.querySelector(selector);
+  if (!btn) {
+    hideStats();
+    return;
+  }
+  showStatsForBtn(btn);
+}
+
+function parseNumeric(value) {
+  const cleaned = value.trim().replace(/,/g, "");
+  if (cleaned === "") return null;
+  const n = Number(cleaned);
+  return isNaN(n) ? null : n;
+}
+
+function formatNum(n) {
+  return Number.isInteger(n)
+    ? n.toLocaleString()
+    : n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+// クイック統計: その場で計算して表示するだけで、セルには何も書き込まない
+function showStats(x, y, label, values) {
+  const nums = [];
+  let excluded = 0;
+  values.forEach(v => {
+    if (v.trim() === "") return;
+    const n = parseNumeric(v);
+    if (n === null) excluded++;
+    else nums.push(n);
+  });
+
+  statsPop.innerHTML = "";
+  const heading = document.createElement("b");
+  heading.textContent = label;
+  statsPop.appendChild(heading);
+
+  const addRow = (name, value) => {
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    const k = document.createElement("span");
+    k.textContent = name;
+    const v = document.createElement("span");
+    v.textContent = value;
+    row.appendChild(k);
+    row.appendChild(v);
+    statsPop.appendChild(row);
+  };
+
+  if (!nums.length) {
+    const empty = document.createElement("div");
+    empty.textContent = t("statsNoNumbers");
+    statsPop.appendChild(empty);
+  } else {
+    const sum = nums.reduce((a, b) => a + b, 0);
+    addRow(t("statsCount"), String(nums.length));
+    if (excluded) addRow(t("statsExcluded"), String(excluded));
+    addRow(t("statsSum"), formatNum(sum));
+    addRow(t("statsAvg"), formatNum(sum / nums.length));
+    addRow(t("statsMax"), formatNum(Math.max(...nums)));
+    addRow(t("statsMin"), formatNum(Math.min(...nums)));
+  }
+
+  statsPop.hidden = false;
+  const rect = statsPop.getBoundingClientRect();
+  statsPop.style.left = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8)) + "px";
+  statsPop.style.top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8)) + "px";
+}
+
+function showColStats(c, x, y) {
+  const label = (data[0][c] || "").trim() || colLetter(c);
+  showStats(x, y, label, data.slice(1).map(row => row[c]));
+}
+
+function showRowStats(r, x, y) {
+  showStats(x, y, t("statsRow") + (r + 1), data[r]);
+}
+
 function headMenuHandler(e) {
+  if (e.target.closest(".stat-btn")) return;
   const rowHead = e.target.closest("th.row-head");
   const colHead = e.target.closest("th.col-head");
   if (!rowHead && !colHead) return;
@@ -1179,6 +1429,37 @@ function caretInfo(cell) {
 table.addEventListener("click", headMenuHandler);
 table.addEventListener("contextmenu", headMenuHandler);
 
+table.addEventListener("click", e => {
+  const btn = e.target.closest(".stat-btn");
+  if (!btn) return;
+  e.stopPropagation();
+  const kind = btn.dataset.c !== undefined ? "col" : "row";
+  const index = Number(kind === "col" ? btn.dataset.c : btn.dataset.r);
+  if (pinnedStat && pinnedStat.kind === kind && pinnedStat.index === index) {
+    hideStats();
+    return;
+  }
+  pinnedStat = { kind: kind, index: index, side: btn.classList.contains("head-stat") ? "head" : "edge" };
+  showStatsForBtn(btn);
+  refreshStatIcons();
+});
+
+table.addEventListener("mouseover", e => {
+  if (pinnedStat) return;
+  const btn = e.target.closest(".stat-btn");
+  if (!btn) return;
+  showStatsForBtn(btn);
+});
+
+table.addEventListener("mouseout", e => {
+  if (pinnedStat) return;
+  const btn = e.target.closest && e.target.closest(".stat-btn");
+  if (!btn) return;
+  // アイコン内の要素間移動（SVGの線の上など）では消さない
+  if (e.relatedTarget instanceof Element && btn.contains(e.relatedTarget)) return;
+  statsPop.hidden = true;
+});
+
 table.addEventListener("focusin", e => {
   const cell = e.target.closest(".cell");
   if (!cell) return;
@@ -1201,6 +1482,7 @@ table.addEventListener("input", e => {
   if (value.endsWith("\n")) value = value.slice(0, -1);
   data[Number(cell.dataset.r)][Number(cell.dataset.c)] = value;
   markDirty();
+  refreshPinnedStats();
 });
 
 table.addEventListener("keydown", e => {
@@ -1383,7 +1665,7 @@ titleEl.addEventListener("input", () => {
     redoStack.length = 0;
     titleEdited = true;
   }
-  doc.title = titleEl.textContent.replace(/\n/g, " ").trim() || "One File Sheet";
+  doc.title = titleEl.textContent.replace(/\n/g, " ").trim() || "OneFileSheet";
   markDirty();
 });
 
@@ -1483,7 +1765,9 @@ themeBtn.addEventListener("click", e => {
 
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
-    if (!themePop.hidden) {
+    if (!statsPop.hidden) {
+      hideStats();
+    } else if (!themePop.hidden) {
       hideThemePop();
     } else if (!helpEl.hidden) {
       hideHelp();
@@ -1515,12 +1799,15 @@ document.addEventListener("click", e => {
   if (!menuEl.hidden && !menuEl.contains(e.target)) hideMenu();
   if (!helpEl.hidden && !helpEl.contains(e.target)) hideHelp();
   if (!themePop.hidden && !themePop.contains(e.target)) hideThemePop();
+  // 固定中はアイコンの再クリックか Escape でのみ閉じる
+  if (!statsPop.hidden && !pinnedStat && !statsPop.contains(e.target)) hideStats();
 });
 
 document.addEventListener("contextmenu", e => {
   if (!menuEl.hidden && !menuEl.contains(e.target)) hideMenu();
   if (!helpEl.hidden && !helpEl.contains(e.target)) hideHelp();
   if (!themePop.hidden && !themePop.contains(e.target)) hideThemePop();
+  if (!statsPop.hidden && !pinnedStat && !statsPop.contains(e.target)) hideStats();
 });
 
 window.addEventListener("beforeunload", e => {
