@@ -72,6 +72,21 @@ One File Sheet は、表計算アプリとデータを1つのHTMLファイルに
 
 AI エージェント向けの編集規約は、HTML内の sheet-data ブロック直前にある `AGENT NOTES` コメントに記載しています。
 
+### AIエージェントへの指示（コピペ用）
+
+ファイルをAIエージェントに渡すときは、次の指示をそのまま添えてください。
+
+```text
+この OneFileSheet.html は1ファイル完結のスプレッドシートです。約31KBありますが、
+大部分は圧縮されたアプリ本体(base64)なので無視してください。
+実データは <script id="sheet-data" type="application/json"> ブロック内のJSONだけです。
+
+形式: { "title", "theme", "lang", "activeSheet", "sheets": [ { "name", "data" } ] }
+- 各シートの data は文字列の2次元配列で、data[0] が見出し行(全行同じ長さ)
+- 編集してよいのはこのJSONのみ。開始タグは変更せず、JSON.stringify(doc, null, 2) の整形を維持
+- セル値に "<" を含める場合は \u003c と書く
+```
+
 ## 注意
 
 - ファイル自身への上書き保存は File System Access API(Chrome / Edge)を使います。ブラウザの仕様上、初回保存時にユーザーがファイルを選択して許可を与える必要があります。

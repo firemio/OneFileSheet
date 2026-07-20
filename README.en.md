@@ -72,6 +72,23 @@ Each sheet's `data` is a 2D array of strings whose first row is the header row. 
 
 The editing contract for AI agents lives in the `AGENT NOTES` comment right above the sheet-data block inside the HTML.
 
+### Prompt for AI agents (copy & paste)
+
+When handing the file to an AI agent, attach this instruction as-is:
+
+```text
+This OneFileSheet.html is a self-contained single-file spreadsheet. It is about
+31KB, but most of it is the compressed app runtime (base64) - ignore that part.
+The actual data is ONLY the JSON inside the
+<script id="sheet-data" type="application/json"> block.
+
+Format: { "title", "theme", "lang", "activeSheet", "sheets": [ { "name", "data" } ] }
+- Each sheet's data is a 2D array of strings; data[0] is the header row (all rows equal length)
+- Edit only that JSON. Keep the opening tag unchanged and keep the
+  JSON.stringify(doc, null, 2) formatting
+- Write "<" in cell values as \u003c
+```
+
 ## Notes
 
 - In-place saving uses the File System Access API (Chrome / Edge). By browser design, you must pick the file and grant permission on the first save.
