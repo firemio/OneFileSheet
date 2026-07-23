@@ -1,16 +1,12 @@
 # One File Sheet
 
-A self-saving spreadsheet in a single HTML file. The app and the data live in the same file, so AI agents can read and write it directly, and sharing means sending one file.
+A self-saving spreadsheet in a single HTML file. The app and the data live in the same file, so AI agents can read and write it directly, and sharing means sending one file. Tables in xls or the cloud are awkward for agents to read and impossible to diff — so the app and its data became one JSON-carrying HTML file.
 
 [日本語](README.md) | English
 
 ![One File Sheet demo: editing, quick stats, the Amber theme](demo.gif)
 
 **[▶ Open the demo](https://firemio.github.io/OneFileSheet/OneFileSheet.html)** / **[⬇ Download](https://github.com/firemio/OneFileSheet/releases/latest)** — just open `OneFileSheet.html` in a browser.
-
-## Why
-
-Tables in xls or the cloud are awkward for AI agents to read and impossible to diff. So the app and its data became one JSON-carrying HTML file.
 
 ## Features
 
@@ -24,17 +20,13 @@ Tables in xls or the cloud are awkward for AI agents to read and impossible to d
 
 ## Good fits
 
-| Use it for | Why it works |
+| Use it for | Concretely |
 |---|---|
-| A shared sheet with AI agents | "Write your findings into this table", "work through these TODOs" — humans use the browser, agents read/write the JSON |
-| An output template for LLMs | Hand an empty sheet over with "answer in this format" — the returned JSON opens as a table |
-| A dashboard you can hand out | A cron job / CI rewrites the sheet-data block: open = up to date. Put it on Pages for a zero-server public dashboard |
-| Git as a time-series DB | CI appends benchmark or coverage history; git keeps the history, diffs and rollbacks |
-| Tracking tables in a repo | Endpoint inventories, test cases, checklists — reviewed in PRs |
-| Send out, fill in, collect | Recipients just open it in a browser — no Excel |
+| An agent writes it, a human fixes it | "Add the pricing of 30 competitors to this table." The agent edits the `sheet-data` JSON, you edit in the browser. Hand over an empty one and it doubles as an output format spec for an LLM |
+| CI appends, git holds the history | One row of last night's benchmark, appended. A PR diff shows the regression; rolling back is `git revert` |
+| A dashboard you hand out | A nightly job swaps the `sheet-data` block and drops the file on a share or Pages. Readers just open a bookmark — no server, no login |
 | Handing a table to the office crew | Send a .md and you get "what is this?" A markdown viewer? An IDE? Not a chance. All they have is a browser. Double-click, it's a table, one cell gets fixed, back it comes |
-| Offline / restricted sites | Runs on nothing but a browser; travels on a USB stick |
-| Household / expense notes | Quick stats show sums and averages at a glance |
+| Recording things offline / air-gapped | A laptop at a customer site with no line, an inspection sheet on a USB stick, a machine where nothing gets past install review. A browser is all it takes |
 
 Not for: confidential data (plain text), formula-driven work, tens of thousands of rows.
 
